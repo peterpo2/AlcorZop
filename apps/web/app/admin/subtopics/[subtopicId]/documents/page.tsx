@@ -43,7 +43,7 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Subtopic</p>
             <h2 className="text-2xl font-semibold">{subtopic.title}</h2>
             <p className="mt-1 text-sm text-slate-500">
-              {subtopic.topic.page.title} > {subtopic.topic.title}
+              {subtopic.topic.page.title} {' > '} {subtopic.topic.title}
             </p>
           </div>
           <Link
