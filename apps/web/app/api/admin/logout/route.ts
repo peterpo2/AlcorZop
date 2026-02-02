@@ -6,7 +6,8 @@ import { SESSION_COOKIE, deleteSessionByToken, getSessionCookieOptions } from '@
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
   await deleteSessionByToken(token);
   const response = NextResponse.redirect(new URL(`${getAdminPath()}/login`, request.url), { status: 303 });
   response.cookies.set(SESSION_COOKIE, '', { ...getSessionCookieOptions(), maxAge: 0 });
