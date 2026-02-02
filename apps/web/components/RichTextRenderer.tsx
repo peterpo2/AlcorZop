@@ -44,7 +44,7 @@ const renderBlock = (block: StrapiBlock, index: number) => {
   switch (block.type) {
     case 'heading': {
       const level = block.level ?? 2;
-      const Tag = `h${Math.min(Math.max(level, 2), 4)}` as keyof JSX.IntrinsicElements;
+      const Tag = `h${Math.min(Math.max(level, 2), 4)}` as 'h2' | 'h3' | 'h4';
       return (
         <Tag key={index} className="mt-5 text-lg font-semibold text-neutral-900">
           {renderChildren(block.children)}
