@@ -97,9 +97,9 @@ export const PageAccordion = ({ page }: { page: PageItem }) => {
                         <h3 className="text-lg font-semibold text-neutral-900">{subtopic.title}</h3>
                         <div className="text-xs text-neutral-500">
                           {subtopic.internalNumber ? <span>Internal {subtopic.internalNumber}</span> : null}
-                          {subtopic.internalNumber && subtopic.aopNumber ? ' • ' : null}
+                          {subtopic.internalNumber && subtopic.aopNumber ? ' â€¢ ' : null}
                           {subtopic.aopNumber ? <span>AOP {subtopic.aopNumber}</span> : null}
-                          {(subtopic.internalNumber || subtopic.aopNumber) && subtopic.startDate ? ' • ' : null}
+                          {(subtopic.internalNumber || subtopic.aopNumber) && subtopic.startDate ? ' â€¢ ' : null}
                           {subtopic.startDate ? <span>Start {subtopic.startDate}</span> : null}
                         </div>
                       </div>

@@ -63,7 +63,7 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
     <div className="rounded-2xl border border-neutral-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
         <div>
-          Page {pageNumber} of {numPages || '—'}
+          Page {pageNumber} of {numPages || 'â€”'}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -92,7 +92,7 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
             setError(null);
           }}
           onLoadError={(err) => setError(err.message)}
-          loading={<p className="text-sm text-neutral-500">Loading PDF…</p>}
+          loading={<p className="text-sm text-neutral-500">Loading PDFâ€¦</p>}
         >
           <Page pageNumber={pageNumber} width={Math.min(width, 900)} />
         </Document>
