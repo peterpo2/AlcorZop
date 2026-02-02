@@ -1,0 +1,14 @@
+node_modules
+.cache
+.tmp
+.git
+.gitignore
+.env
+build
+dist
+coverage
+logs
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+public/uploads

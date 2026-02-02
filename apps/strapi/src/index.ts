@@ -22,10 +22,18 @@ export default {
       return;
     }
 
+    const slugify = (value: string) =>
+      value
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+
     const richText = (text: string) => [
       {
         type: 'paragraph',
-        children: [{ text }],
+        children: [{ type: 'text', text }],
       },
     ];
 
@@ -45,7 +53,7 @@ export default {
     const createdPages = [];
     for (const page of pages) {
       const created = await strapi.entityService.create('api::page.page', {
-        data: page,
+        data: { ...page, slug: slugify(page.title) },
       });
       createdPages.push(created);
     }
@@ -62,6 +70,7 @@ export default {
       const created = await strapi.entityService.create('api::topic.topic', {
         data: {
           title: topic.title,
+          slug: slugify(topic.title),
           order: topic.order,
           page: createdPages[topic.pageIndex].id,
         },
@@ -104,6 +113,7 @@ export default {
       await strapi.entityService.create('api::subtopic.subtopic', {
         data: {
           title: subtopic.title,
+          slug: slugify(subtopic.title),
           order: subtopic.order,
           content: subtopic.content,
           internalNumber: subtopic.internalNumber,

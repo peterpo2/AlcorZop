@@ -1,0 +1,13 @@
+node_modules
+.next
+.turbo
+.git
+.gitignore
+.env
+dist
+out
+coverage
+logs
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
