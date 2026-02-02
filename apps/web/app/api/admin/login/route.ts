@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { getAdminPath } from '@/lib/adminPath';
-import { createSessionToken, getSessionCookieOptions, SESSION_COOKIE } from '@/lib/session';
+import { createSession, getSessionCookieOptions, SESSION_COOKIE } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,8 +12,8 @@ const isSafeRedirect = (value: string) => value.startsWith('/') && !value.starts
 
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  const limit = rateLimit(`login:${ip}`, { windowMs: 15 * 60 * 1000, max: 5 });
-  if (!limit.allowed) {
+  const ipLimit = rateLimit(`login:ip:${ip}`, { windowMs: 15 * 60 * 1000, max: 5 });
+  if (!ipLimit.allowed) {
     return NextResponse.json({ error: 'Too many login attempts.' }, { status: 429 });
   }
 
@@ -48,6 +48,11 @@ export async function POST(request: Request) {
     return fail();
   }
 
+  const emailLimit = rateLimit(`login:email:${email}`, { windowMs: 15 * 60 * 1000, max: 5 });
+  if (!emailLimit.allowed) {
+    return NextResponse.json({ error: 'Too many login attempts.' }, { status: 429 });
+  }
+
   const admin = await prisma.adminUser.findUnique({ where: { email } });
   if (!admin) {
     return fail();
@@ -58,7 +63,7 @@ export async function POST(request: Request) {
     return fail();
   }
 
-  const token = await createSessionToken({ sub: String(admin.id), email: admin.email });
+  const token = await createSession(admin.id);
   const response = NextResponse.redirect(
     new URL(isSafeRedirect(redirectTo) ? redirectTo : getAdminPath(), request.url),
     { status: 303 }

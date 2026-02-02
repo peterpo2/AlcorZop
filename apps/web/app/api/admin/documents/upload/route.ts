@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/slugify';
 import { ensureUploadDir } from '@/lib/upload';
-import { SESSION_COOKIE, verifySessionToken } from '@/lib/session';
+import { SESSION_COOKIE, getSessionByToken } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ const isSafeRedirect = (value: string) => value.startsWith('/') && !value.starts
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const session = await getSessionByToken(token);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

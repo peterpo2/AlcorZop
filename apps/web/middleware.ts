@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminPath, isAdminPath } from '@/lib/adminPath';
-import { SESSION_COOKIE, verifySessionToken } from '@/lib/session';
 
 const isStaticAsset = (pathname: string) =>
   pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico');
@@ -16,6 +15,7 @@ export async function middleware(request: NextRequest) {
   const matchesAdminPath = isAdminPath(pathname, adminPath);
   const isAdminApi = pathname.startsWith('/api/admin');
   const loginPath = `${adminPath}/login`;
+  const isAuthCheckRoute = pathname === '/api/admin/auth/check';
 
   if (adminPath !== '/admin' && pathname.startsWith('/admin')) {
     return NextResponse.rewrite(new URL('/not-found', request.url));
@@ -27,11 +27,17 @@ export async function middleware(request: NextRequest) {
 
   const isLoginRoute = pathname === loginPath || pathname === '/api/admin/login';
 
-  if (!isLoginRoute) {
-    const token = request.cookies.get(SESSION_COOKIE)?.value;
-    const session = token ? await verifySessionToken(token) : null;
+  if (!isLoginRoute && !isAuthCheckRoute) {
+    const authUrl = new URL('/api/admin/auth/check', request.url);
+    const authResponse = await fetch(authUrl, {
+      method: 'GET',
+      headers: {
+        cookie: request.headers.get('cookie') || '',
+      },
+      cache: 'no-store',
+    });
 
-    if (!session) {
+    if (authResponse.status === 401) {
       if (isAdminApi) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }

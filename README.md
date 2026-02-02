@@ -49,7 +49,7 @@ These are the primary environment variables required to run the project:
 
 Additional recommended variables:
 
-- `SESSION_SECRET` (required for production)
+- `SESSION_TTL_DAYS` (defaults to 7)
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -57,7 +57,7 @@ Additional recommended variables:
 ## Admin portal
 
 - All admin routes live under `ADMIN_PATH` (defaults to `/admin`).
-- The admin portal is protected by password hashing + signed sessions.
+- The admin portal is protected by password hashing + DB-backed sessions stored as hashed tokens.
 - Login is rate-limited in-memory for development. For production, place the app behind a reverse proxy and enable a shared rate limiter.
 
 ## Content model
