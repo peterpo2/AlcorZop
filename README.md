@@ -57,6 +57,7 @@ Additional recommended variables:
 ## Admin portal
 
 - All admin routes live under `ADMIN_PATH` (defaults to `/admin`).
+- To generate a stable randomized admin path, set `ADMIN_PATH=random` and set `ADMIN_PATH_SEED` to a random value.
 - The admin portal is protected by password hashing + DB-backed sessions stored as hashed tokens.
 - Login is rate-limited in-memory for development. For production, place the app behind a reverse proxy and enable a shared rate limiter.
 

@@ -16,6 +16,14 @@ export async function middleware(request: NextRequest) {
   const isAdminApi = pathname.startsWith('/api/admin');
   const loginPath = `${adminPath}/login`;
   const isAuthCheckRoute = pathname === '/api/admin/auth/check';
+  const isLoginPage = pathname === loginPath;
+  const requestHeaders = new Headers(request.headers);
+  if (matchesAdminPath) {
+    requestHeaders.set('x-admin-route', '1');
+  }
+  if (isLoginPage) {
+    requestHeaders.set('x-admin-login', '1');
+  }
 
   if (adminPath !== '/admin' && pathname.startsWith('/admin')) {
     return NextResponse.rewrite(new URL('/not-found', request.url));
@@ -51,10 +59,10 @@ export async function middleware(request: NextRequest) {
   if (matchesAdminPath && adminPath !== '/admin') {
     const rewritten = request.nextUrl.clone();
     rewritten.pathname = pathname.replace(adminPath, '/admin');
-    return NextResponse.rewrite(rewritten);
+    return NextResponse.rewrite(rewritten, { request: { headers: requestHeaders } });
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
