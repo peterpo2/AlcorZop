@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentBySlug } from '@/lib/content';
 import { resolveUploadPath } from '@/lib/upload';
 
@@ -9,10 +9,11 @@ export const dynamic = 'force-dynamic';
 const sanitizeFileName = (value: string) => value.replace(/[^a-zA-Z0-9._-]/g, '_');
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { docSlug: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ docSlug: string }> }
 ) {
-  const document = await getDocumentBySlug(params.docSlug);
+  const { docSlug } = await context.params;
+  const document = await getDocumentBySlug(docSlug);
   if (!document) {
     return new NextResponse('Not found', { status: 404 });
   }
