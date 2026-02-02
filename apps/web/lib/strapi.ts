@@ -44,8 +44,8 @@ export const getMenuPages = async (): Promise<MenuPage[]> => {
   );
 
   return data.data.map((item) => ({
-    id: item.id,
     ...item.attributes,
+    id: item.id,
   }));
 };
 
