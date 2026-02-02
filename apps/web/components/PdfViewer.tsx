@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { StrapiMediaFile } from '@/types/strapi';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -29,7 +28,7 @@ const useContainerWidth = () => {
   return { ref, width };
 };
 
-export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
+export const PdfViewer = ({ src, title }: { src: string; title: string }) => {
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +41,7 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
 
   useEffect(() => {
     setPageNumber(1);
-  }, [file.url]);
+  }, [src]);
 
   if (error || isMobile) {
     return (
@@ -50,11 +49,7 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
         <p className="text-sm text-neutral-600">
           PDF preview is limited on this device. Use the embedded viewer below or download the file.
         </p>
-        <iframe
-          title={file.name || 'PDF document'}
-          src={file.url}
-          className="mt-4 h-[70vh] w-full rounded-xl border border-neutral-200"
-        />
+        <iframe title={title} src={src} className="mt-4 h-[70vh] w-full rounded-xl border border-neutral-200" />
       </div>
     );
   }
@@ -63,7 +58,7 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
     <div className="rounded-2xl border border-neutral-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
         <div>
-          Page {pageNumber} of {numPages || '—'}
+          Page {pageNumber} of {numPages || '--'}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -86,13 +81,13 @@ export const PdfViewer = ({ file }: { file: StrapiMediaFile }) => {
       </div>
       <div ref={ref} className="mt-4">
         <Document
-          file={file.url}
+          file={src}
           onLoadSuccess={(info) => {
             setNumPages(info.numPages);
             setError(null);
           }}
           onLoadError={(err) => setError(err.message)}
-          loading={<p className="text-sm text-neutral-500">Loading PDF…</p>}
+          loading={<p className="text-sm text-neutral-500">Loading PDF...</p>}
         >
           <Page pageNumber={pageNumber} width={Math.min(width, 900)} />
         </Document>

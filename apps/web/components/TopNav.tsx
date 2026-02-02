@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { MenuPage } from '@/types/strapi';
+import type { MenuPage } from '@/types/content';
 
 export const TopNav = ({ pages }: { pages: MenuPage[] }) => {
   const pathname = usePathname();

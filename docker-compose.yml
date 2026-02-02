@@ -16,37 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  strapi:
-    build:
-      context: ./apps/strapi
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - .env
-      - ./apps/strapi/.env
-    environment:
-      NODE_ENV: production
-      STRAPI_TELEMETRY_DISABLED: "true"
-      STRAPI_DATABASE_CLIENT: ${STRAPI_DATABASE_CLIENT}
-      STRAPI_DATABASE_HOST: ${STRAPI_DATABASE_HOST}
-      STRAPI_DATABASE_PORT: ${STRAPI_DATABASE_PORT}
-      STRAPI_DATABASE_NAME: ${STRAPI_DATABASE_NAME}
-      STRAPI_DATABASE_USERNAME: ${STRAPI_DATABASE_USERNAME}
-      STRAPI_DATABASE_PASSWORD: ${STRAPI_DATABASE_PASSWORD}
-      WEB_URL: ${WEB_URL}
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "1337:1337"
-    volumes:
-      - ./data/strapi-uploads:/app/public/uploads
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:1337/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
   web:
     build:
       context: ./apps/web
@@ -59,13 +28,20 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: 3000
-      NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
-      WEB_STRAPI_URL: ${WEB_STRAPI_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PATH: ${ADMIN_PATH}
+      SESSION_SECRET: ${SESSION_SECRET}
+      UPLOAD_DIR: ${UPLOAD_DIR}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB}
     depends_on:
-      strapi:
+      db:
         condition: service_healthy
     ports:
       - "3000:3000"
+    volumes:
+      - ./data/uploads:/data/uploads
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))\""]
       interval: 15s

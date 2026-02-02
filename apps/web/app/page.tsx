@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { getMenuPages } from '@/lib/strapi';
+import { getMenuPages } from '@/lib/content';
+
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const pages = await getMenuPages().catch(() => []);
@@ -9,8 +11,8 @@ export default async function Home() {
       <section className="rounded-3xl border border-neutral-200 bg-white/80 p-8 shadow-sm">
         <h2 className="text-3xl font-semibold text-neutral-900">Welcome</h2>
         <p className="mt-3 max-w-2xl text-neutral-600">
-          Browse pages, expand topics, and open documents without leaving the portal. Updates made in Strapi are
-          available instantly.
+          Browse pages, expand topics, and open documents without leaving the portal. Content updates immediately in
+          the admin portal.
         </p>
       </section>
 
@@ -34,7 +36,7 @@ export default async function Home() {
 
       {pages.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-neutral-300 bg-white/70 p-8 text-center text-sm text-neutral-500">
-          No pages published yet. Create your first Page in Strapi to begin.
+          No pages published yet. Create your first Page in the admin portal to begin.
         </div>
       ) : null}
     </div>

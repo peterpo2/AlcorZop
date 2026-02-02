@@ -1,32 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { PageItem, SubtopicItem, TopicItem } from '@/types/strapi';
-import { RichTextRenderer } from '@/components/RichTextRenderer';
+import type { PageItem, SubtopicItem, TopicItem } from '@/types/content';
 import Link from 'next/link';
-
-const blocksToText = (blocks?: SubtopicItem['content']) => {
-  if (!blocks) return '';
-  if (typeof blocks === 'string') return blocks;
-  return blocks
-    .map((block) =>
-      (block.children || [])
-        .map((child) => (typeof child.text === 'string' ? child.text : ''))
-        .join('')
-    )
-    .join(' ');
-};
 
 const filterSubtopics = (subtopics: SubtopicItem[], query: string) => {
   if (!query) return subtopics;
   const q = query.toLowerCase();
   return subtopics
     .map((subtopic) => {
-      const contentText = blocksToText(subtopic.content).toLowerCase();
       const titleMatch = subtopic.title.toLowerCase().includes(q);
-      const contentMatch = contentText.includes(q);
       const matchedDocuments = subtopic.documents.filter((doc) => doc.title.toLowerCase().includes(q));
-      if (titleMatch || contentMatch || matchedDocuments.length > 0) {
+      if (titleMatch || matchedDocuments.length > 0) {
         return {
           ...subtopic,
           documents: matchedDocuments.length > 0 ? matchedDocuments : subtopic.documents,
@@ -69,9 +54,7 @@ export const PageAccordion = ({ page }: { page: PageItem }) => {
           placeholder="Search subtopics or document titles"
           className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm focus:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-200"
         />
-        <p className="mt-2 text-xs text-neutral-500">
-          Try searching by subtopic title, content keywords, or document name.
-        </p>
+        <p className="mt-2 text-xs text-neutral-500">Try searching by subtopic title or document name.</p>
       </div>
 
       <div className="space-y-4">
@@ -95,16 +78,6 @@ export const PageAccordion = ({ page }: { page: PageItem }) => {
                     <div key={subtopic.id} className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <h3 className="text-lg font-semibold text-neutral-900">{subtopic.title}</h3>
-                        <div className="text-xs text-neutral-500">
-                          {subtopic.internalNumber ? <span>Internal {subtopic.internalNumber}</span> : null}
-                          {subtopic.internalNumber && subtopic.aopNumber ? ' • ' : null}
-                          {subtopic.aopNumber ? <span>AOP {subtopic.aopNumber}</span> : null}
-                          {(subtopic.internalNumber || subtopic.aopNumber) && subtopic.startDate ? ' • ' : null}
-                          {subtopic.startDate ? <span>Start {subtopic.startDate}</span> : null}
-                        </div>
-                      </div>
-                      <div className="mt-2 text-sm">
-                        <RichTextRenderer content={subtopic.content} />
                       </div>
                       <div className="mt-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Documents</p>

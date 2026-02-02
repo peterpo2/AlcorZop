@@ -1,7 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getDocumentBySlug, isPdfFile } from '@/lib/strapi';
+import { getDocumentBySlug } from '@/lib/content';
 import { PdfViewer } from '@/components/PdfViewer';
+
+export const dynamic = 'force-dynamic';
+
+const formatBytes = (bytes: number) => {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / Math.pow(1024, index);
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+};
 
 export default async function DocumentPage({ params }: { params: { docSlug: string } }) {
   const document = await getDocumentBySlug(params.docSlug);
@@ -9,8 +19,7 @@ export default async function DocumentPage({ params }: { params: { docSlug: stri
     notFound();
   }
 
-  const file = document.file;
-  const isPdf = isPdfFile(file);
+  const fileUrl = `/doc/${document.slug}/file`;
 
   return (
     <div className="space-y-6">
@@ -19,6 +28,11 @@ export default async function DocumentPage({ params }: { params: { docSlug: stri
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Document</p>
             <h2 className="text-3xl font-semibold text-neutral-900">{document.title}</h2>
+            <p className="mt-2 text-sm text-neutral-500">
+              {document.subtopic?.topic?.page?.title ?? 'Page'}
+              {document.subtopic?.topic?.title ? ` > ${document.subtopic.topic.title}` : ''}
+              {document.subtopic?.title ? ` > ${document.subtopic.title}` : ''}
+            </p>
           </div>
           <Link
             href="/search"
@@ -27,25 +41,19 @@ export default async function DocumentPage({ params }: { params: { docSlug: stri
             Back to Search
           </Link>
         </div>
-        {file?.url ? (
-          <a
-            href={file.url}
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-red-700 underline underline-offset-4"
-          >
-            Download file
-          </a>
-        ) : (
-          <p className="mt-4 text-sm text-neutral-500">No file has been uploaded yet.</p>
-        )}
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-neutral-600">
+          <span>{document.fileName}</span>
+          <span>{formatBytes(document.sizeBytes)}</span>
+        </div>
+        <a
+          href={fileUrl}
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-red-700 underline underline-offset-4"
+        >
+          Download file
+        </a>
       </div>
 
-      {file?.url && isPdf ? (
-        <PdfViewer file={file} />
-      ) : file?.url ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-          This document is not a PDF. Use the download link to open it.
-        </div>
-      ) : null}
+      <PdfViewer src={fileUrl} title={document.title} />
     </div>
   );
 }

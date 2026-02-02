@@ -1,6 +1,6 @@
-# Document Portal (Strapi + Next.js)
+# Document Portal (Next.js + Postgres)
 
-Production-ready, Docker-first document portal with Strapi v5, Next.js App Router, Postgres, and a PDF viewer.
+Document portal with a custom admin area (Next.js App Router), Prisma + Postgres, and PDF uploads stored on the VPS filesystem.
 
 ## Prerequisites
 
@@ -10,15 +10,13 @@ Production-ready, Docker-first document portal with Strapi v5, Next.js App Route
 ## Repo layout
 
 - `docker-compose.yml`
-- `apps/strapi` (Strapi v5)
-- `apps/web` (Next.js 14+ App Router)
+- `apps/web` (Next.js App Router + Admin UI)
 - `data` (local dev volumes only)
 
 ## Quick start (Docker)
 
-1. Copy env examples and fill secrets:
+1. Copy env examples and update secrets:
    - `cp .env.example .env`
-   - `cp apps/strapi/.env.example apps/strapi/.env`
    - `cp apps/web/.env.example apps/web/.env`
 
 2. Start everything:
@@ -27,129 +25,82 @@ Production-ready, Docker-first document portal with Strapi v5, Next.js App Route
 docker compose up -d --build
 ```
 
-3. Access services:
+3. Run Prisma migrations + seed (first time only):
+
+```bash
+docker compose exec web npx prisma migrate deploy
+docker compose exec web npx prisma db seed
+```
+
+4. Access services:
    - Web: `http://localhost:3000`
-   - Strapi Admin: `http://localhost:1337/admin`
-   - Strapi API: `http://localhost:1337/api`
+   - Admin (default): `http://localhost:3000/admin` or `ADMIN_PATH` if set
 
-## Local Run (Docker Compose)
+## Environment variables
 
-1. Copy env examples:
-   - `cp .env.example .env`
-   - `cp apps/strapi/.env.example apps/strapi/.env`
-   - `cp apps/web/.env.example apps/web/.env`
+These are the primary environment variables required to run the project:
 
-2. Generate secrets for Strapi (APP_KEYS must be 4 comma-separated keys):
+- `DATABASE_URL`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_PATH`
+- `UPLOAD_DIR`
+- `MAX_UPLOAD_MB`
 
-```bash
-# node (cross-platform)
-node -e "const c=require('crypto');console.log('APP_KEYS='+[0,1,2,3].map(()=>c.randomBytes(16).toString('hex')).join(','))"
-node -e "const c=require('crypto');console.log('API_TOKEN_SALT='+c.randomBytes(16).toString('hex'))"
-node -e "const c=require('crypto');console.log('ADMIN_JWT_SECRET='+c.randomBytes(32).toString('hex'))"
-node -e "const c=require('crypto');console.log('TRANSFER_TOKEN_SALT='+c.randomBytes(16).toString('hex'))"
-node -e "const c=require('crypto');console.log('JWT_SECRET='+c.randomBytes(32).toString('hex'))"
-node -e "const c=require('crypto');console.log('USERS_PERMISSIONS_JWT_SECRET='+c.randomBytes(32).toString('hex'))"
-node -e "const c=require('crypto');console.log('ENCRYPTION_KEY='+c.randomBytes(32).toString('hex'))"
+Additional recommended variables:
 
-# or openssl
-openssl rand -hex 16
-```
+- `SESSION_SECRET` (required for production)
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
 
-3. Start everything:
+## Admin portal
 
-```bash
-docker compose down -v
-docker compose up -d --build
-```
+- All admin routes live under `ADMIN_PATH` (defaults to `/admin`).
+- The admin portal is protected by password hashing + signed sessions.
+- Login is rate-limited in-memory for development. For production, place the app behind a reverse proxy and enable a shared rate limiter.
 
-4. Create the first Strapi admin user:
-   - Open `http://localhost:1337/admin` and complete the signup form.
+## Content model
 
-5. Enable public permissions (exact clicks):
-   - Settings -> Users & Permissions Plugin -> Roles -> Public
-   - Permissions -> Content APIs:
-     - page: check `find`, `findOne`
-     - topic: check `find`, `findOne`
-     - subtopic: check `find`, `findOne`
-     - document: check `find`, `findOne`
-   - Click Save
+- Page -> Topic -> Subtopic -> Document (PDF)
+- Documents store metadata in Postgres and files on disk in `UPLOAD_DIR`.
 
-## Strapi admin setup
+## Public site
 
-- On first launch, create the admin user in `/admin`.
-- Seed content is created automatically if no pages exist.
-
-### Create content
-
-1. Create a **Page** (title, description, order)
-2. Create **Topics** linked to a Page
-3. Create **Subtopics** linked to a Topic
-4. Create **Documents** linked to a Subtopic and upload a file
-
-### Public permissions
-
-Enable read-only permissions for public role:
-
-1. Go to **Settings** -> **Users & Permissions Plugin** -> **Roles** -> **Public**
-2. Check **find** and **findOne** for:
-   - `page`, `topic`, `subtopic`, `document`
-3. Save
-
-No create/update/delete should be enabled for public role.
-
-## PDF viewer
-
-- The document page uses PDF.js via `react-pdf`.
-- A clean pagination UI is provided.
-- On mobile or PDF render errors, it falls back to an iframe or download link.
-
-## Search
-
-- Page view: client-side filter for subtopics and document titles.
-- `/search`: server-side Strapi query for documents by title.
+- Home lists Pages ordered by `order`.
+- `/p/[pageSlug]` shows Topics/Subtopics with expandable sections.
+- `/doc/[docSlug]` shows a dedicated document page and streams PDFs from disk.
+- `/search` searches across page/topic/subtopic/document titles.
 
 ## Docker notes
 
 ### Volumes
 
 - Postgres data: `./data/postgres` -> `/var/lib/postgresql/data`
-- Strapi uploads: `./data/strapi-uploads` -> `/app/public/uploads`
-- Docker will create these folders on first run if they do not exist.
+- Uploads: `./data/uploads` -> `/data/uploads`
 
-### Backup / restore
+### One-time migration step
 
-- Backup: tar/zip the `data` folder.
-- Restore: stop containers, replace `data`, then start containers.
-
-## Reverse proxy (nginx example)
-
-Use your existing reverse proxy. Suggested upstreams:
-
-- Web app (public): `http://127.0.0.1:3000`
-- Strapi admin + API: `http://127.0.0.1:1337`
-
-Keep `/admin` and `/api` on Strapi.
-
-## Troubleshooting
-
-- **CORS errors**: set `WEB_URL` to the public web URL and restart Strapi.
-- **No data in UI**: check Strapi public permissions for find/findOne.
-- **Uploads not visible**: confirm volume mount `./data/strapi-uploads` and `public/uploads`.
-- **PDF viewer blank**: use the download link or check if file is a PDF.
-
-## Local development (optional)
-
-If you want to run without Docker:
+By default, the Docker container runs `prisma migrate deploy` on start. For local development you can also run:
 
 ```bash
-cd apps/strapi
-npm install
-npm run develop
+docker compose exec web npx prisma migrate deploy
 ```
+
+### Commands
+
+```bash
+docker compose up -d --build
+docker compose down -v
+```
+
+## Local development (optional)
 
 ```bash
 cd apps/web
 npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
 npm run dev
 ```
-

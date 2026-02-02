@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { searchDocuments } from '@/lib/strapi';
+import { searchDocuments } from '@/lib/content';
+
+export const dynamic = 'force-dynamic';
 
 export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
@@ -10,7 +12,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       <header className="rounded-3xl border border-neutral-200 bg-white/80 p-6 shadow-sm">
         <h2 className="text-3xl font-semibold text-neutral-900">Search documents</h2>
         <p className="mt-2 text-sm text-neutral-600">
-          Search by document title. Results include the page, topic, and subtopic path.
+          Search across page, topic, subtopic, and document titles. Results include the document location.
         </p>
         <form action="/search" className="mt-4 flex flex-wrap gap-3">
           <input

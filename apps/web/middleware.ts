@@ -1,0 +1,56 @@
+import { NextResponse, type NextRequest } from 'next/server';
+import { getAdminPath, isAdminPath } from '@/lib/adminPath';
+import { SESSION_COOKIE, verifySessionToken } from '@/lib/session';
+
+const isStaticAsset = (pathname: string) =>
+  pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico');
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (isStaticAsset(pathname)) {
+    return NextResponse.next();
+  }
+
+  const adminPath = getAdminPath();
+  const matchesAdminPath = isAdminPath(pathname, adminPath);
+  const isAdminApi = pathname.startsWith('/api/admin');
+  const loginPath = `${adminPath}/login`;
+
+  if (adminPath !== '/admin' && pathname.startsWith('/admin')) {
+    return NextResponse.rewrite(new URL('/not-found', request.url));
+  }
+
+  if (!matchesAdminPath && !isAdminApi) {
+    return NextResponse.next();
+  }
+
+  const isLoginRoute = pathname === loginPath || pathname === '/api/admin/login';
+
+  if (!isLoginRoute) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    const session = token ? await verifySessionToken(token) : null;
+
+    if (!session) {
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = loginPath;
+      redirectUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  if (matchesAdminPath && adminPath !== '/admin') {
+    const rewritten = request.nextUrl.clone();
+    rewritten.pathname = pathname.replace(adminPath, '/admin');
+    return NextResponse.rewrite(rewritten);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, Newsreader } from 'next/font/google';
 import './globals.css';
-import { getMenuPages } from '@/lib/strapi';
+import { getMenuPages } from '@/lib/content';
 import { TopNav } from '@/components/TopNav';
 
 const sans = IBM_Plex_Sans({
@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   title: 'Document Portal',
   description: 'Browse official pages, topics, and documents.',
 };
+
+export const dynamic = 'force-dynamic';
 
 export default async function RootLayout({
   children,
@@ -41,7 +43,7 @@ export default async function RootLayout({
         <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
         <footer className="border-t border-neutral-200 bg-white/70 px-6 py-8 text-sm text-neutral-500">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-            <span>Managed in Strapi. Updates are instant.</span>
+            <span>Managed in the custom admin portal.</span>
             <span>(c) 2026 AlcorZop</span>
           </div>
         </footer>
