@@ -48,6 +48,7 @@ node -e "const c=require('crypto');console.log('API_TOKEN_SALT='+c.randomBytes(1
 node -e "const c=require('crypto');console.log('ADMIN_JWT_SECRET='+c.randomBytes(32).toString('hex'))"
 node -e "const c=require('crypto');console.log('TRANSFER_TOKEN_SALT='+c.randomBytes(16).toString('hex'))"
 node -e "const c=require('crypto');console.log('JWT_SECRET='+c.randomBytes(32).toString('hex'))"
+node -e "const c=require('crypto');console.log('USERS_PERMISSIONS_JWT_SECRET='+c.randomBytes(32).toString('hex'))"
 node -e "const c=require('crypto');console.log('ENCRYPTION_KEY='+c.randomBytes(32).toString('hex'))"
 
 # or openssl
