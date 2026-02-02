@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+/data/
+
+/apps/strapi/.cache/
+/apps/strapi/build/
+/apps/strapi/.tmp/
+/apps/strapi/public/uploads/
+
+/apps/web/.next/
+/apps/web/out/

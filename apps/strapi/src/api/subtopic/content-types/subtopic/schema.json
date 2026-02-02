@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subtopics",
+  "info": {
+    "singularName": "subtopic",
+    "pluralName": "subtopics",
+    "displayName": "Subtopic",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true,
+      "unique": true
+    },
+    "order": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "content": {
+      "type": "blocks",
+      "required": true
+    },
+    "startDate": {
+      "type": "date"
+    },
+    "internalNumber": {
+      "type": "string"
+    },
+    "aopNumber": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::topic.topic",
+      "inversedBy": "subtopics",
+      "required": true
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::document.document",
+      "mappedBy": "subtopic"
+    }
+  }
+}
