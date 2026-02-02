@@ -32,6 +32,47 @@ docker compose up -d --build
    - Strapi Admin: `http://localhost:1337/admin`
    - Strapi API: `http://localhost:1337/api`
 
+## Local Run (Docker Compose)
+
+1. Copy env examples:
+   - `cp .env.example .env`
+   - `cp apps/strapi/.env.example apps/strapi/.env`
+   - `cp apps/web/.env.example apps/web/.env`
+
+2. Generate secrets for Strapi (APP_KEYS must be 4 comma-separated keys):
+
+```bash
+# node (cross-platform)
+node -e "const c=require('crypto');console.log('APP_KEYS='+[0,1,2,3].map(()=>c.randomBytes(16).toString('hex')).join(','))"
+node -e "const c=require('crypto');console.log('API_TOKEN_SALT='+c.randomBytes(16).toString('hex'))"
+node -e "const c=require('crypto');console.log('ADMIN_JWT_SECRET='+c.randomBytes(32).toString('hex'))"
+node -e "const c=require('crypto');console.log('TRANSFER_TOKEN_SALT='+c.randomBytes(16).toString('hex'))"
+node -e "const c=require('crypto');console.log('JWT_SECRET='+c.randomBytes(32).toString('hex'))"
+node -e "const c=require('crypto');console.log('ENCRYPTION_KEY='+c.randomBytes(32).toString('hex'))"
+
+# or openssl
+openssl rand -hex 16
+```
+
+3. Start everything:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+4. Create the first Strapi admin user:
+   - Open `http://localhost:1337/admin` and complete the signup form.
+
+5. Enable public permissions (exact clicks):
+   - Settings -> Users & Permissions Plugin -> Roles -> Public
+   - Permissions -> Content APIs:
+     - page: check `find`, `findOne`
+     - topic: check `find`, `findOne`
+     - subtopic: check `find`, `findOne`
+     - document: check `find`, `findOne`
+   - Click Save
+
 ## Strapi admin setup
 
 - On first launch, create the admin user in `/admin`.
@@ -72,6 +113,7 @@ No create/update/delete should be enabled for public role.
 
 - Postgres data: `./data/postgres` -> `/var/lib/postgresql/data`
 - Strapi uploads: `./data/strapi-uploads` -> `/app/public/uploads`
+- Docker will create these folders on first run if they do not exist.
 
 ### Backup / restore
 
