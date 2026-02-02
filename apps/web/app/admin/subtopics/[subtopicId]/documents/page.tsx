@@ -92,7 +92,8 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
           <p className="text-sm text-slate-500">No documents uploaded yet.</p>
         ) : null}
         <div className="space-y-4">
-          {subtopic.documents.map((doc) => (
+          {subtopic.documents.map(
+            (doc: { id: number; title: string; fileName: string | null; sizeBytes: number; slug: string }) => (
             <div key={doc.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -118,7 +119,8 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
                 </form>
               </div>
             </div>
-          ))}
+            )
+          )}
         </div>
       </section>
     </div>

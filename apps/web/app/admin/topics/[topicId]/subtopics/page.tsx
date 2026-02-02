@@ -75,7 +75,8 @@ export default async function SubtopicsPage({ params }: { params: { topicId: str
           <p className="text-sm text-slate-500">No subtopics created yet.</p>
         ) : null}
         <div className="space-y-4">
-          {topic.subtopics.map((subtopic) => (
+          {topic.subtopics.map(
+            (subtopic: { id: number; title: string; slug: string; order: number }) => (
             <div key={subtopic.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <form action={updateSubtopic} className="grid gap-3 md:grid-cols-[2fr_2fr_1fr_auto]">
                 <input type="hidden" name="topicId" value={topic.id} />
@@ -120,7 +121,8 @@ export default async function SubtopicsPage({ params }: { params: { topicId: str
                 </form>
               </div>
             </div>
-          ))}
+            )
+          )}
         </div>
       </section>
     </div>

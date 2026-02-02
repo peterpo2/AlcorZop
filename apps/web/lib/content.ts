@@ -68,7 +68,21 @@ export const searchDocuments = async (query: string): Promise<SearchResult[]> =>
     orderBy: { title: 'asc' },
   });
 
-  return results.map((doc) => ({
+  return results.map(
+    (doc: {
+      id: number;
+      title: string;
+      slug: string;
+      subtopic: {
+        title: string;
+        slug: string;
+        topic?: {
+          title: string;
+          slug: string;
+          page?: { title: string; slug: string } | null;
+        } | null;
+      } | null;
+    }) => ({
     id: doc.id,
     title: doc.title,
     slug: doc.slug,
@@ -83,5 +97,6 @@ export const searchDocuments = async (query: string): Promise<SearchResult[]> =>
         ? { title: doc.subtopic.title, slug: doc.subtopic.slug }
         : null,
     },
-  }));
+    })
+  );
 };

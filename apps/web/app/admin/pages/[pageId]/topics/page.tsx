@@ -71,7 +71,7 @@ export default async function TopicsPage({ params }: { params: { pageId: string 
           <p className="text-sm text-slate-500">No topics created yet.</p>
         ) : null}
         <div className="space-y-4">
-          {page.topics.map((topic) => (
+          {page.topics.map((topic: { id: number; title: string; slug: string; order: number }) => (
             <div key={topic.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <form action={updateTopic} className="grid gap-3 md:grid-cols-[2fr_2fr_1fr_auto]">
                 <input type="hidden" name="pageId" value={page.id} />

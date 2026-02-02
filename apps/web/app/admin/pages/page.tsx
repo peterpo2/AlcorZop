@@ -48,7 +48,7 @@ export default async function AdminPages() {
           {pages.length === 0 ? (
             <p className="text-sm text-slate-500">No pages created yet.</p>
           ) : null}
-          {pages.map((page) => (
+          {pages.map((page: { id: number; title: string; slug: string; order: number }) => (
             <div key={page.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <form action={updatePage} className="grid gap-3 md:grid-cols-[2fr_2fr_1fr_auto]">
                 <input type="hidden" name="pageId" value={page.id} />
