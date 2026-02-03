@@ -295,6 +295,23 @@ a:hover {
     white-space: pre-wrap;
 }
 
+.static-profile .panel-heading {
+    cursor: default;
+}
+
+.static-profile .panel-content p {
+    margin: 0 0 12px;
+    white-space: normal;
+}
+
+.static-profile .panel-content p:last-child {
+    margin-bottom: 0;
+}
+
+.static-profile .panel-content h4 {
+    margin-top: 18px;
+}
+
 .pdf-attachment {
     margin: 14px 0;
     padding: 10px 12px;
@@ -343,6 +360,27 @@ a:hover {
 .terms h2 {
     font-size: 24px;
     margin-bottom: 12px;
+}
+
+.terms-actions {
+    margin-top: 12px;
+}
+
+.terms-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px dashed rgba(15, 23, 42, 0.2);
+    background: #f7f7f7;
+    font-weight: 600;
+    color: var(--link);
+}
+
+.terms-link:hover {
+    color: var(--accent-strong);
+    border-color: rgba(166, 31, 37, 0.4);
 }
 
 .admin-section {

@@ -54,6 +54,16 @@
                 <div class="terms-content">
                     {{ terms.content | safe }}
                 </div>
+                <div class="terms-actions">
+                    <a
+                        class="terms-link"
+                        href="{{ url_for('uploaded_file', filename='terms.pdf') }}"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Преглед на Общи условия (PDF)
+                    </a>
+                </div>
             </section>
         </aside>
     </main>
