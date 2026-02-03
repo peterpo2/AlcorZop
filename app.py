@@ -10,8 +10,8 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Store PDFs in the Uploads folder (case-sensitive on Linux/Docker).
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'Uploads')
+# Store PDFs in the uploads folder (case-sensitive on Linux/Docker).
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -22,7 +22,7 @@ DATA_FILE = 'entries.json'
 PAGES_FILE = 'pages.json'
 
 # Create uploads directory if it doesn't exist (and migrate legacy folder if present)
-legacy_uploads = os.path.join(BASE_DIR, 'uploads')
+legacy_uploads = os.path.join(BASE_DIR, 'Uploads')
 if os.path.isdir(legacy_uploads) and not os.path.isdir(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     for name in os.listdir(legacy_uploads):
