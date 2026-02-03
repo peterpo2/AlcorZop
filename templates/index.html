@@ -1,87 +1,142 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>МБАЛ „Рахила Ангелова“ – гр.Перник</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
     <div class="app-shell">
-        <header class="site-header">
-            <div class="header-inner">
-                <div class="brand">
-                    <div class="brand-text">
-                        <h1>МБАЛ „Рахила Ангелова“ – гр.Перник</h1>
-</div>
+      <header class="site-header">
+        <div class="header-inner">
+          <div class="brand">
+            <div class="brand-text">
+              <h1>МБАЛ „Рахила Ангелова“ – гр.Перник</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <div class="page-navigation">
+          {% for page in pages %}
+          <button
+            onclick="location.href='{{ url_for('index', page=page.id) }}'"
+            class="page-btn {% if page.id == current_page %}active{% endif %}"
+          >
+            {{ page.name }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="search-container">
+          <label class="search-label" for="search-input">Търсене</label>
+          <div class="search-field">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Търси в тази страница..."
+              oninput="searchEntries(this.value)"
+            />
+            <span class="search-hint">Общи условия</span>
+          </div>
+        </div>
+      </section>
+
+      <main class="content">
+        <div class="panels-container">
+          {% if entries %} {% for entry in entries %}
+          <div class="panel">
+            <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
+              <h3 class="panel-title">{{ entry.heading }}</h3>
+              <span class="toggle-icon" aria-hidden="true">Ў</span>
+            </div>
+            <div class="panel-body" id="panel-{{ entry.id }}">
+              <div class="panel-content">
+                <h4>{{ entry.title }}</h4>
+                <p>{{ entry.content }}</p>
+
+                {% if entry.pdf_file %}
+                <div class="pdf-attachment">
+                  <a
+                    href="{{ url_for('uploaded_file', filename=entry.pdf_file) }}"
+                    target="_blank"
+                    class="pdf-link"
+                  >
+                    Преглед на PDF документ
+                  </a>
                 </div>
-            </div>
-        </header>
-
-        <section class="toolbar">
-            <div class="page-navigation">
-                {% for page in pages %}
-                <button onclick="location.href='{{ url_for('index', page=page.id) }}'"
-                        class="page-btn {% if page.id == current_page %}active{% endif %}">
-                    {{ page.name }}
-                </button>
-                {% endfor %}
-            </div>
-            <div class="search-container">
-                <label class="search-label" for="search-input">Търсене</label>
-                <div class="search-field">
-                    <input
-                        type="text"
-                        id="search-input"
-                        placeholder="Търси в тази страница..."
-                        oninput="searchEntries(this.value)"
-                    >
-                    <span class="search-hint">Общи условия</span>
-                </div>
-            </div>
-        </section>
-
-        <main class="content">
-            <div class="panels-container">
-                {% if entries %}
-                    {% for entry in entries %}
-                    <div class="panel">
-                        <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
-                            <h3 class="panel-title">{{ entry.heading }}</h3>
-                            <span class="toggle-icon" aria-hidden="true">Ў</span>
-                        </div>
-                        <div class="panel-body" id="panel-{{ entry.id }}">
-                            <div class="panel-content">
-                                <h4>{{ entry.title }}</h4>
-                                <p>{{ entry.content }}</p>
-
-                                {% if entry.pdf_file %}
-                                <div class="pdf-attachment">
-                                    <a href="{{ url_for('uploaded_file', filename=entry.pdf_file) }}"
-                                       target="_blank"
-                                       class="pdf-link">
-                                        Преглед на PDF документ
-                                    </a>
-                                </div>
-                                {% endif %}
-
-                                <small class="entry-date">Публикувано: {{ entry.date }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="no-entries">
-                        <p>Няма записи за тази страница.</p>
-                    </div>
                 {% endif %}
+
+                <small class="entry-date">Публикувано: {{ entry.date }}</small>
+              </div>
             </div>
-        </main>
+          </div>
+          {% endfor %} {% else %}
+          <div class="panel static-profile">
+            <div class="panel-heading">
+              <h3 class="panel-title">
+                Профил на купувача – МБАЛ „Рахила Ангелова“ – гр. Перник
+              </h3>
+            </div>
+
+            <div class="panel-body open">
+              <div class="panel-content">
+                <h4>МБАЛ „Рахила Ангелова“ АД – гр. Перник</h4>
+
+                <p>
+                  МБАЛ „Рахила Ангелова“ АД гр. Перник съхранява и обогатява
+                  традициите на 110-годишната си история. Днес тя е модерно
+                  здравно заведение, което предлага квалифицирана болнична
+                  диагностична, лечебна и рехабилитационна помощ на нуждаещите
+                  се от активно лечение.
+                </p>
+
+                <h4>УПРАВЛЕНИЕ:</h4>
+
+                <p>
+                  <strong>Д-р Анатоли Митов</strong><br />
+                  Изпълнителен директор на МБАЛ „Рахила Ангелова“, гр. Перник<br />
+                  тел.: 076 / 601 360
+                </p>
+
+                <p>
+                  <strong>Д-р Симеон Станков</strong><br />
+                  Заместник-директор „Медицински дейности“<br />
+                  тел.: 076 / 601 360
+                </p>
+
+                <h4>ЮРИСТИ:</h4>
+                <p>—</p>
+
+                <h4>АДРЕС:</h4>
+
+                <p>
+                  Лечебното заведение се намира на адрес:<br />
+                  гр. Перник, ул. „Брезник“ №2, ПК 2300
+                </p>
+
+                <p>
+                  <strong>Електронна поща:</strong><br />
+                  <a href="mailto:mbalpk@abv.bg">mbalpk@abv.bg</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </main>
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
+  </body>
 </html>
