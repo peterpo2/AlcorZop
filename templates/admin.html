@@ -78,7 +78,7 @@
                     <textarea id="content" name="content" rows="5" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="pdf_label">Име на линка (PDF)</label>
+                    <label for="pdf_label">Име на файл (PDF)</label>
                     <input type="text" id="pdf_label" name="pdf_label" placeholder="Напр. Процедура 23">
                     <small class="form-help">Това име ще се показва като текст на линка.</small>
                 </div>
@@ -123,9 +123,9 @@
                                 PDF:
                                 {% for pdf_name in pdf_files %}
                                 {% if pdf_name is mapping %}
-                                <a href="{{ url_for('pdf_viewer', filename=pdf_name.filename) }}">{{ pdf_name.label or pdf_name.filename }}</a>{% if not loop.last %}, {% endif %}
+                                <a href="{{ url_for('pdf_viewer', filename=pdf_name.filename) }}" target="_blank" rel="noopener">{{ pdf_name.label or pdf_name.filename }}</a>{% if not loop.last %}, {% endif %}
                                 {% else %}
-                                <a href="{{ url_for('pdf_viewer', filename=pdf_name) }}">{{ pdf_name }}</a>{% if not loop.last %}, {% endif %}
+                                <a href="{{ url_for('pdf_viewer', filename=pdf_name) }}" target="_blank" rel="noopener">{{ pdf_name }}</a>{% if not loop.last %}, {% endif %}
                                 {% endif %}
                                 {% endfor %}
                             </div>

@@ -95,6 +95,7 @@
                   <a
                     href="{{ url_for('pdf_viewer', filename=pdf_name.filename if pdf_name is mapping else pdf_name) }}"
                     class="pdf-link"
+                    target="_blank" rel="noopener"
                   >
                     {% if pdf_name is mapping %}
                     {{ pdf_name.label or pdf_name.filename }}

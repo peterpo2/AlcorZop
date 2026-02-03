@@ -78,7 +78,7 @@ function renderEntries(entries) {
                                     const filename = typeof file === 'string' ? file : file.filename;
                                     const label = typeof file === 'string' ? file : (file.label || file.filename);
                                     return `
-                                        <a href="/pdf/${filename}" class="pdf-link">
+                                        <a href="/pdf/${filename}" class="pdf-link" target="_blank" rel="noopener">
                                             ${label}
                                         </a>
                                     `;
