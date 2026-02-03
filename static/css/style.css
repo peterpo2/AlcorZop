@@ -1,18 +1,16 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap");
-
 :root {
-    --bg: #f4f1ec;
-    --ink: #1c1a16;
-    --muted: #5b5650;
-    --accent: #c1552b;
-    --accent-strong: #9f3e19;
+    --bg: #ffffff;
+    --ink: #222222;
+    --muted: #666666;
+    --accent: #d52323;
+    --accent-strong: #b81616;
+    --link: #2d6ecf;
     --surface: #ffffff;
-    --surface-elevated: rgba(255, 255, 255, 0.86);
-    --stroke: rgba(28, 26, 22, 0.12);
-    --shadow: 0 24px 60px rgba(28, 26, 22, 0.12);
-    --radius-lg: 20px;
-    --radius-md: 14px;
-    --radius-sm: 10px;
+    --stroke: #d9d9d9;
+    --shadow: none;
+    --radius-lg: 4px;
+    --radius-md: 3px;
+    --radius-sm: 3px;
 }
 
 * {
@@ -22,18 +20,15 @@
 }
 
 body {
-    font-family: "Space Grotesk", "Segoe UI", sans-serif;
-    background:
-        radial-gradient(circle at top left, rgba(193, 85, 43, 0.14), transparent 45%),
-        radial-gradient(circle at 80% 10%, rgba(28, 26, 22, 0.08), transparent 50%),
-        var(--bg);
+    font-family: "Tahoma", "Segoe UI", "Arial", sans-serif;
+    background: var(--bg);
     color: var(--ink);
     line-height: 1.6;
     min-height: 100vh;
 }
 
 a {
-    color: inherit;
+    color: var(--link);
     text-decoration: none;
 }
 
@@ -42,19 +37,17 @@ a:hover {
 }
 
 .app-shell {
-    max-width: 1200px;
+    max-width: 1120px;
     margin: 0 auto;
-    padding: 32px 24px 60px;
+    padding: 18px 16px 40px;
 }
 
 .site-header {
-    background: var(--surface-elevated);
+    background: var(--surface);
     border: 1px solid var(--stroke);
-    box-shadow: var(--shadow);
-    border-radius: var(--radius-lg);
-    padding: 26px 30px;
-    backdrop-filter: blur(12px);
-    margin-bottom: 28px;
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    margin-bottom: 16px;
 }
 
 .header-inner {
@@ -68,32 +61,18 @@ a:hover {
 .brand {
     display: flex;
     align-items: center;
-    gap: 18px;
-}
-
-.brand-mark {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #f4c6a5, #c1552b);
-    color: #fff;
-    font-weight: 700;
-    letter-spacing: 1px;
-    font-size: 18px;
-    text-transform: uppercase;
+    gap: 12px;
 }
 
 .brand-text h1 {
-    font-size: 28px;
-    letter-spacing: -0.02em;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .subtitle {
     color: var(--muted);
-    font-size: 15px;
-    max-width: 480px;
+    font-size: 13px;
+    max-width: 640px;
 }
 
 .header-actions {
@@ -104,10 +83,7 @@ a:hover {
 }
 
 .ghost-link {
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid var(--stroke);
-    background: rgba(255, 255, 255, 0.6);
+    color: var(--link);
     font-weight: 600;
 }
 
@@ -121,49 +97,50 @@ a:hover {
 
 .nav-btn,
 .page-btn {
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid var(--stroke);
-    color: var(--ink);
+    padding: 10px 16px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    color: #ffffff;
     font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: background 0.15s ease;
 }
 
 .nav-btn:hover,
 .page-btn:hover {
-    transform: translateY(-1px);
-    border-color: rgba(193, 85, 43, 0.35);
-    box-shadow: 0 10px 20px rgba(28, 26, 22, 0.1);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .nav-btn.active,
 .page-btn.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
+    background: rgba(0, 0, 0, 0.12);
 }
 
 .toolbar {
     display: grid;
     grid-template-columns: 1.4fr 0.6fr;
     gap: 18px;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .page-navigation {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    padding: 18px;
-    background: var(--surface);
+    gap: 0;
+    padding: 0;
+    background: var(--accent);
     border-radius: var(--radius-md);
-    border: 1px solid var(--stroke);
+    border: 1px solid var(--accent-strong);
+    overflow: hidden;
+}
+
+.page-navigation .page-btn + .page-btn {
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .search-container {
     background: var(--surface);
-    padding: 18px;
+    padding: 14px 16px 16px;
     border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
     display: flex;
@@ -172,10 +149,10 @@ a:hover {
 }
 
 .search-label {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     font-weight: 600;
 }
 
@@ -187,18 +164,17 @@ a:hover {
 
 #search-input {
     width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
+    padding: 10px 12px;
+    border-radius: 3px;
     border: 1px solid var(--stroke);
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease;
 }
 
 #search-input:focus {
     outline: none;
-    border-color: rgba(193, 85, 43, 0.5);
-    box-shadow: 0 0 0 3px rgba(193, 85, 43, 0.12);
+    border-color: var(--accent);
 }
 
 .search-hint {
@@ -224,18 +200,12 @@ a:hover {
     border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.panel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 30px rgba(28, 26, 22, 0.12);
 }
 
 .panel-heading {
-    background: linear-gradient(135deg, rgba(193, 85, 43, 0.95), rgba(159, 62, 25, 0.95));
+    background: var(--accent);
     color: #fff;
-    padding: 16px 20px;
+    padding: 10px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -247,7 +217,7 @@ a:hover {
 }
 
 .panel-title {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -268,12 +238,12 @@ a:hover {
 }
 
 .panel-content {
-    padding: 20px 22px 24px;
+    padding: 16px 18px 20px;
 }
 
 .panel-content h4 {
-    font-size: 20px;
-    margin-bottom: 8px;
+    font-size: 16px;
+    margin-bottom: 6px;
 }
 
 .panel-content p {
@@ -282,16 +252,16 @@ a:hover {
 }
 
 .pdf-attachment {
-    margin: 16px 0;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(193, 85, 43, 0.08);
-    border: 1px dashed rgba(193, 85, 43, 0.3);
+    margin: 14px 0;
+    padding: 10px 12px;
+    border-radius: 3px;
+    background: #f7f7f7;
+    border: 1px dashed var(--stroke);
 }
 
 .pdf-link {
     font-weight: 600;
-    color: var(--accent-strong);
+    color: var(--link);
 }
 
 .entry-date {
@@ -301,28 +271,28 @@ a:hover {
 
 .no-entries {
     background: var(--surface);
-    padding: 28px;
+    padding: 18px;
     border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
-    text-align: center;
+    text-align: left;
 }
 
 .no-entries a {
-    color: var(--accent-strong);
+    color: var(--link);
     font-weight: 600;
 }
 
 .content-card {
     background: var(--surface);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
-    padding: 26px;
-    box-shadow: var(--shadow);
+    padding: 18px;
+    box-shadow: none;
 }
 
 .landing-content {
-    font-family: "Source Serif 4", serif;
-    font-size: 18px;
+    font-family: "Tahoma", "Segoe UI", "Arial", sans-serif;
+    font-size: 14px;
     color: #2d2a26;
 }
 
@@ -333,15 +303,15 @@ a:hover {
 
 .admin-section {
     background: var(--surface);
-    padding: 24px;
+    padding: 18px;
     border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
-    box-shadow: 0 12px 30px rgba(28, 26, 22, 0.08);
+    box-shadow: none;
 }
 
 .admin-section h2 {
-    font-size: 22px;
-    margin-bottom: 16px;
+    font-size: 16px;
+    margin-bottom: 12px;
     color: var(--ink);
 }
 
@@ -359,11 +329,11 @@ a:hover {
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
+    padding: 10px 12px;
+    border-radius: 3px;
     border: 1px solid var(--stroke);
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .form-group textarea {
@@ -374,8 +344,7 @@ a:hover {
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-color: rgba(193, 85, 43, 0.5);
-    box-shadow: 0 0 0 3px rgba(193, 85, 43, 0.12);
+    border-color: var(--accent);
 }
 
 .form-help {
@@ -386,15 +355,14 @@ a:hover {
 }
 
 .btn {
-    padding: 10px 18px;
-    border-radius: 999px;
+    padding: 8px 14px;
+    border-radius: 3px;
     font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.2s ease;
 }
 
 .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(28, 26, 22, 0.12);
+    background: #ededed;
 }
 
 .btn-primary {
@@ -403,7 +371,7 @@ a:hover {
 }
 
 .btn-secondary {
-    background: #ede7df;
+    background: #f2f2f2;
     color: var(--ink);
     margin-left: 8px;
 }
@@ -429,10 +397,10 @@ a:hover {
     justify-content: space-between;
     gap: 16px;
     align-items: center;
-    padding: 18px;
+    padding: 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--stroke);
-    background: #fbfaf8;
+    background: #ffffff;
 }
 
 .entry-info h4 {
@@ -447,9 +415,9 @@ a:hover {
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(193, 85, 43, 0.18);
-    color: var(--accent-strong);
+    border-radius: 3px;
+    background: #f2f2f2;
+    color: var(--ink);
     font-size: 12px;
     font-weight: 600;
     margin-bottom: 8px;
@@ -457,7 +425,7 @@ a:hover {
 
 .pdf-indicator {
     font-size: 13px;
-    color: var(--accent-strong);
+    color: var(--link);
 }
 
 .page-management,
@@ -477,10 +445,10 @@ a:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
-    border-radius: 12px;
+    padding: 12px 14px;
+    border-radius: 3px;
     border: 1px solid var(--stroke);
-    background: #fdfbf9;
+    background: #ffffff;
 }
 
 .page-name {
@@ -494,8 +462,8 @@ a:hover {
 }
 
 .btn-small {
-    padding: 6px 12px;
-    border-radius: 999px;
+    padding: 6px 10px;
+    border-radius: 3px;
     font-size: 12px;
 }
 
@@ -507,18 +475,19 @@ a:hover {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 13, 10, 0.6);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 1000;
 }
 
 .modal-content {
     background: var(--surface);
     margin: 5% auto;
-    padding: 26px;
-    border-radius: var(--radius-lg);
+    padding: 18px;
+    border-radius: var(--radius-md);
     max-width: 600px;
     width: 90%;
-    box-shadow: var(--shadow);
+    box-shadow: none;
+    border: 1px solid var(--stroke);
 }
 
 .close {
