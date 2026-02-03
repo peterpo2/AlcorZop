@@ -56,7 +56,7 @@ function setupProfileForm() {
         const title = document.getElementById('profile-title').value.trim();
         const body = document.getElementById('profile-body').value.trim();
         if (!title || !body) {
-            alert('????, ????????? ???????? ? ??????????.');
+            alert('Моля, попълнете заглавие и съдържание.');
             return;
         }
         try {
@@ -79,7 +79,7 @@ function setupProfileForm() {
             });
             const result = await response.json();
             if (result.success) {
-                alert('???????? ? ??????? ???????!');
+                alert('Профилът е обновен успешно!');
                 if (fileInput) {
                     fileInput.value = '';
                 }
@@ -90,11 +90,11 @@ function setupProfileForm() {
                     renderProfileFiles(result.profile.files);
                 }
             } else {
-                alert(result.error || '????????? ?????????? ?? ??????.');
+                alert(result.error || 'Неуспешно обновяване на профил.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('???????? ?????? ??? ?????????? ?? ??????.');
+            alert('Възникна грешка при обновяване на профил.');
         }
     });
 }
@@ -115,7 +115,7 @@ function renderProfileFiles(files) {
     if (!files || files.length === 0) {
         const p = document.createElement('p');
         p.className = 'no-files profile-no-files';
-        p.textContent = '???? ????????? ???????.';
+        p.textContent = 'Няма прикачени файлове.';
         container.appendChild(p);
         return;
     }
@@ -134,7 +134,7 @@ function renderProfileFiles(files) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn-small btn-delete profile-file-delete';
-        btn.textContent = '??????';
+        btn.textContent = 'Изтрий';
         li.appendChild(link);
         li.appendChild(btn);
         ul.appendChild(li);
@@ -157,7 +157,7 @@ function setupProfileFileDeletes() {
         if (!filename) {
             return;
         }
-        if (!confirm('??????? ?? ???, ?? ?????? ?? ???????? ???? PDF?')) {
+        if (!confirm('Сигурни ли сте, че искате да изтриете този PDF?')) {
             return;
         }
         try {
@@ -174,11 +174,11 @@ function setupProfileFileDeletes() {
                     renderProfileFiles([]);
                 }
             } else {
-                alert(result.error || '????????? ????????? ?? PDF.');
+                alert(result.error || 'Неуспешно изтриване на PDF.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('???????? ?????? ??? ????????? ?? PDF.');
+            alert('Възникна грешка при изтриване на PDF.');
         }
     });
 }

@@ -384,10 +384,15 @@ a:hover {
 }
 
 .profile-logo img {
-    max-width: 180px;
+    max-width: 320px;
     width: 100%;
     height: auto;
     display: block;
+}
+
+.profile-container .panel-content {
+    padding: 22px 26px 28px;
+    font-size: 15px;
 }
 
 .pdf-attachment {
