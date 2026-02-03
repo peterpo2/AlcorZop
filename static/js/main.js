@@ -2,7 +2,7 @@
 function togglePanel(panelId) {
     const panelBody = document.getElementById(`panel-${panelId}`);
     const panelHeading = panelBody.previousElementSibling;
-    
+
     if (panelBody.classList.contains('collapsed')) {
         panelBody.classList.remove('collapsed');
         panelHeading.classList.remove('collapsed');
@@ -14,9 +14,9 @@ function togglePanel(panelId) {
 
 // Initialize all panels as expanded on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // All panels start expanded by default
     console.log('Page loaded - panels initialized');
 });
+
 let searchTimeout = null;
 
 async function searchEntries(query) {
@@ -25,7 +25,6 @@ async function searchEntries(query) {
     searchTimeout = setTimeout(async () => {
         const trimmed = query.trim();
 
-        // If search cleared в†’ reload normal page
         if (trimmed.length < 2) {
             window.location.reload();
             return;
@@ -46,12 +45,13 @@ async function searchEntries(query) {
         }
     }, 300);
 }
+
 function renderEntries(entries) {
     const container = document.querySelector('.panels-container');
     container.innerHTML = '';
 
     if (!entries.length) {
-        container.innerHTML = '<p class="no-entries">No matching results.</p>';
+        container.innerHTML = '<div class="no-entries"><p>Няма намерени резултати.</p></div>';
         return;
     }
 
@@ -60,7 +60,7 @@ function renderEntries(entries) {
             <div class="panel">
                 <div class="panel-heading" onclick="togglePanel(${entry.id})">
                     <h3 class="panel-title">${entry.heading}</h3>
-                    <span class="toggle-icon">в–ј</span>
+                    <span class="toggle-icon" aria-hidden="true">Ў</span>
                 </div>
                 <div class="panel-body" id="panel-${entry.id}">
                     <div class="panel-content">
@@ -69,11 +69,11 @@ function renderEntries(entries) {
                         ${entry.pdf_file ? `
                             <div class="pdf-attachment">
                                 <a href="/uploads/${entry.pdf_file}" target="_blank" class="pdf-link">
-                                    рџ“„ View PDF Document
+                                    Преглед на PDF документ
                                 </a>
                             </div>` : ''
                         }
-                        <small class="entry-date">Posted: ${entry.date}</small>
+                        <small class="entry-date">Публикувано: ${entry.date}</small>
                     </div>
                 </div>
             </div>

@@ -1,32 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ landing.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-<div class="container">
+<div class="app-shell">
 
-    <header>
-        <h1>{{ landing.title }}</h1>
-        <nav>
-            {% for page in pages %}
-            <button onclick="location.href='/page/{{ page.id }}'">
-                {{ page.name }}
-            </button>
-            {% endfor %}
-        </nav>
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="brand">
+                <span class="brand-mark">AZ</span>
+                <div class="brand-text">
+                    <h1>{{ landing.title }}</h1>
+                    <p class="subtitle">Структурирана информация, ясна навигация и бърз достъп</p>
+                </div>
+            </div>
+            <nav class="header-actions">
+                {% for page in pages %}
+                <button class="nav-btn" onclick="location.href='/page/{{ page.id }}'">
+                    {{ page.name }}
+                </button>
+                {% endfor %}
+            </nav>
+        </div>
     </header>
 
-    <main>
-        <section class="landing-content">
+    <main class="landing-main">
+        <section class="content-card landing-content">
             {{ landing.content | safe }}
         </section>
 
-        <hr>
-
-        <section class="terms">
+        <section class="content-card terms">
             <h2>{{ terms.title }}</h2>
             <div class="terms-content">
                 {{ terms.content | safe }}
