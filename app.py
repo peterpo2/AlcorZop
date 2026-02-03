@@ -4,6 +4,7 @@ from flask import Response
 import json
 import os
 from datetime import datetime
+import html
 import re
 from werkzeug.utils import secure_filename
 
@@ -18,6 +19,8 @@ app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
 MAX_PDF_FILES = 5
+MAX_PROFILE_PDF_FILES = 10
+PROFILE_LOGO_FILENAME = 'profile-logo.png'
 
 # Data files
 DATA_FILE = 'entries.json'
@@ -209,11 +212,14 @@ def default_profile():
             "\n"
             "Електронна поща:\n"
             "mbalpk@abv.bg"
-        )
+        ),
+        "files": []
     }
 
 def normalize_profile_body(text):
-    body = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    body = (text or "")
+    body = html.unescape(body)
+    body = body.replace("\r\n", "\n").replace("\r", "\n")
     body = re.sub(r"<br\\s*/?>", "\n", body, flags=re.IGNORECASE)
     body = re.sub(r"</(p|h1|h2|h3|h4|h5|h6)>", "\n", body, flags=re.IGNORECASE)
     body = re.sub(r"<[^>]+>", "", body)
@@ -222,10 +228,14 @@ def normalize_profile_body(text):
 
 def load_profile():
     if os.path.exists(PROFILE_FILE):
-        with open(PROFILE_FILE, 'r', encoding='utf-8') as f:
+        with open(PROFILE_FILE, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
             if isinstance(data, dict) and data.get('title') and data.get('body'):
                 normalized_body = normalize_profile_body(data.get('body', ''))
+                files = data.get('files')
+                if not isinstance(files, list):
+                    files = []
+                data['files'] = files
                 if normalized_body != data.get('body'):
                     data['body'] = normalized_body
                     save_profile(data)
@@ -235,7 +245,8 @@ def load_profile():
 def save_profile(profile):
     profile = {
         'title': profile.get('title', ''),
-        'body': normalize_profile_body(profile.get('body', ''))
+        'body': normalize_profile_body(profile.get('body', '')),
+        'files': profile.get('files', [])
     }
     with open(PROFILE_FILE, 'w', encoding='utf-8') as f:
         json.dump(profile, f, ensure_ascii=False, indent=2)
@@ -282,11 +293,22 @@ def index():
     entries = load_entries()
     pages = load_pages()
     profile = load_profile()
+    profile_logo_url = None
+    logo_path = os.path.join(app.config['UPLOAD_FOLDER'], PROFILE_LOGO_FILENAME)
+    if os.path.isfile(logo_path):
+        profile_logo_url = url_for('uploaded_file', filename=PROFILE_LOGO_FILENAME)
 
     # Filter entries by page
     page_entries = [e for e in entries if e.get('page_id') == page_id]
 
-    return render_template('index.html', entries=page_entries, pages=pages, current_page=page_id, profile=profile)
+    return render_template(
+        'index.html',
+        entries=page_entries,
+        pages=pages,
+        current_page=page_id,
+        profile=profile,
+        profile_logo_url=profile_logo_url
+    )
 
 @app.route('/page/<int:page_id>')
 def page_view(page_id):
@@ -591,14 +613,74 @@ def get_profile():
 
 @app.route('/api/profile', methods=['PUT'])
 def update_profile():
-    data = request.json or {}
-    title = (data.get('title') or '').strip()
-    body = (data.get('body') or '').strip()
+    if request.is_json:
+        data = request.json or {}
+        title = (data.get('title') or '').strip()
+        body = (data.get('body') or '').strip()
+        files = data.get('files') or []
+        if not title or not body:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        profile = {'title': title, 'body': body, 'files': files}
+        save_profile(profile)
+        return jsonify({'success': True, 'profile': profile})
+
+    title = (request.form.get('title') or '').strip()
+    body = (request.form.get('body') or '').strip()
     if not title or not body:
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-    profile = {'title': title, 'body': body}
+
+    profile = load_profile()
+    pdf_label = (request.form.get('pdf_label') or '').strip()
+    files = request.files.getlist('pdf_files')
+    existing_files = profile.get('files', [])
+    incoming_count = len([f for f in files if f and f.filename])
+    if len(existing_files) + incoming_count > MAX_PROFILE_PDF_FILES:
+        return jsonify({'success': False, 'error': f'Maximum {MAX_PROFILE_PDF_FILES} PDF files allowed'}), 400
+
+    total_files = len([f for f in files if f and f.filename])
+    label_index = 1
+    for file in files:
+        if not file or file.filename == '':
+            continue
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Only PDF files allowed'}), 400
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_filename = f"{timestamp}_{filename}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+        file.save(save_path)
+        label = build_pdf_label(pdf_label, label_index, total_files) or filename
+        existing_files.append({
+            'name': label,
+            'filename': pdf_filename,
+            'url': f"/pdf/{pdf_filename}"
+        })
+        label_index += 1
+
+    profile = {'title': title, 'body': body, 'files': existing_files}
     save_profile(profile)
     return jsonify({'success': True, 'profile': profile})
+
+@app.route('/api/profile/pdfs/<filename>', methods=['DELETE'])
+def delete_profile_pdf(filename):
+    if not allowed_file(filename):
+        return jsonify({'success': False, 'error': 'Invalid file'}), 400
+    profile = load_profile()
+    files = profile.get('files', [])
+    removed = False
+    updated_files = []
+    for item in files:
+        if isinstance(item, dict) and item.get('filename') == filename:
+            removed = True
+            continue
+        updated_files.append(item)
+    if removed:
+        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+    profile['files'] = updated_files
+    save_profile(profile)
+    return jsonify({'success': True, 'removed': removed})
 
 @app.route('/api/pages', methods=['POST'])
 def add_page():

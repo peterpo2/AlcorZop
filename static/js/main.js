@@ -1,6 +1,10 @@
 ﻿// Function to toggle panel collapse/expand
 let openedAll = false;
 
+function getCollapsibleBodies() {
+    return document.querySelectorAll('.panel-body[data-collapsible="true"]');
+}
+
 function togglePanel(panelId) {
     const panelBody = document.getElementById(`panel-body-${panelId}`);
     if (!panelBody) {
@@ -24,7 +28,7 @@ function togglePanel(panelId) {
 }
 
 function setAllPanels(open) {
-    const bodies = document.querySelectorAll('.panel-body');
+    const bodies = getCollapsibleBodies();
     bodies.forEach(body => {
         const heading = body.previousElementSibling;
         if (open) {
@@ -42,7 +46,7 @@ function setAllPanels(open) {
 }
 
 function syncToggleAllState() {
-    const bodies = Array.from(document.querySelectorAll('.panel-body'));
+    const bodies = Array.from(getCollapsibleBodies());
     const allOpen = bodies.length > 0 && bodies.every(body => !body.classList.contains('collapsed'));
     openedAll = allOpen;
     const btn = document.getElementById('toggle-all-btn');
@@ -93,7 +97,7 @@ async function searchEntries(query) {
 }
 
 function renderEntries(entries) {
-    const container = document.querySelector('.panels-container');
+    const container = document.querySelector('.entries-container');
     container.innerHTML = '';
 
     if (!entries.length) {
@@ -147,7 +151,7 @@ function renderEntries(entries) {
                     <h3 class="panel-title">${title}</h3>
                     <span class="toggle-icon" aria-hidden="true">▾</span>
                 </div>
-                <div class="panel-body collapsed" id="panel-body-${entry.id}">
+                <div class="panel-body collapsed" data-collapsible="true" id="panel-body-${entry.id}">
                     <div class="panel-content">
                         ${(entry.aop_number || entry.publish_date || entry.internal_number) ? `
                             <div class="panel-meta">

@@ -56,24 +56,129 @@ function setupProfileForm() {
         const title = document.getElementById('profile-title').value.trim();
         const body = document.getElementById('profile-body').value.trim();
         if (!title || !body) {
-            alert('Моля, попълнете заглавие и съдържание.');
+            alert('????, ????????? ???????? ? ??????????.');
             return;
         }
         try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('body', body);
+            const labelInput = document.getElementById('profile-pdf-label');
+            if (labelInput) {
+                formData.append('pdf_label', labelInput.value || '');
+            }
+            const fileInput = document.getElementById('profile-pdf-files');
+            if (fileInput && fileInput.files.length > 0) {
+                Array.from(fileInput.files).forEach(file => {
+                    formData.append('pdf_files', file);
+                });
+            }
             const response = await fetch('/api/profile', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, body })
+                body: formData
             });
             const result = await response.json();
             if (result.success) {
-                alert('Профилът е обновен успешно!');
+                alert('???????? ? ??????? ???????!');
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                if (labelInput) {
+                    labelInput.value = '';
+                }
+                if (result.profile && result.profile.files) {
+                    renderProfileFiles(result.profile.files);
+                }
             } else {
-                alert(result.error || 'Неуспешно обновяване на профил.');
+                alert(result.error || '????????? ?????????? ?? ??????.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Възникна грешка при обновяване на профил.');
+            alert('???????? ?????? ??? ?????????? ?? ??????.');
+        }
+    });
+}
+
+function renderProfileFiles(files) {
+    const container = document.querySelector('.profile-files-group');
+    if (!container) {
+        return;
+    }
+    const list = container.querySelector('.profile-files-list');
+    const empty = container.querySelector('.profile-no-files');
+    if (list) {
+        list.remove();
+    }
+    if (empty) {
+        empty.remove();
+    }
+    if (!files || files.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'no-files profile-no-files';
+        p.textContent = '???? ????????? ???????.';
+        container.appendChild(p);
+        return;
+    }
+    const ul = document.createElement('ul');
+    ul.className = 'files profile-files-list';
+    files.forEach(file => {
+        const li = document.createElement('li');
+        if (file.filename) {
+            li.dataset.filename = file.filename;
+        }
+        const link = document.createElement('a');
+        link.href = file.url || '#';
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = file.name || file.filename || file.url || 'PDF';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-small btn-delete profile-file-delete';
+        btn.textContent = '??????';
+        li.appendChild(link);
+        li.appendChild(btn);
+        ul.appendChild(li);
+    });
+    container.appendChild(ul);
+}
+
+function setupProfileFileDeletes() {
+    const container = document.querySelector('.profile-files-group');
+    if (!container) {
+        return;
+    }
+    container.addEventListener('click', async event => {
+        const button = event.target.closest('.profile-file-delete');
+        if (!button) {
+            return;
+        }
+        const item = button.closest('li');
+        const filename = item ? item.dataset.filename : '';
+        if (!filename) {
+            return;
+        }
+        if (!confirm('??????? ?? ???, ?? ?????? ?? ???????? ???? PDF?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/profile/pdfs/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                if (item) {
+                    item.remove();
+                }
+                const remaining = container.querySelectorAll('li');
+                if (remaining.length === 0) {
+                    renderProfileFiles([]);
+                }
+            } else {
+                alert(result.error || '????????? ????????? ?? PDF.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('???????? ?????? ??? ????????? ?? PDF.');
         }
     });
 }
@@ -82,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDateFields();
     setupCollapsibles();
     setupProfileForm();
+    setupProfileFileDeletes();
 });
 
 document.getElementById('add-entry-form').addEventListener('submit', async function(e) {
@@ -368,4 +474,5 @@ function filterEntries() {
             }
         }
     });
-}
+}
+

@@ -71,18 +71,39 @@
             Покажи всички
           </button>
         </div>
-        <div class="panels-container">
+        <div class="profile-container">
           <div class="panel static-profile">
             <div class="panel-heading">
               <h3 class="panel-title">{{ profile.title }}</h3>
             </div>
-            <div class="panel-body open">
+            <div class="panel-body profile-body" data-collapsible="false">
               <div class="panel-content profile-content">
-                {{ profile.body | e | replace('\r\n', '\n') | replace('\n', '<br>') | safe }}
+                {% if profile_logo_url %}
+                <div class="profile-logo">
+                  <img src="{{ profile_logo_url }}" alt="Лого на МБАЛ „Рахила Ангелова“" />
+                </div>
+                {% endif %}
+                {% for paragraph in profile.body.split('\n\n') %}
+                  <p>{{ paragraph | e | replace('\n', '<br>') | safe }}</p>
+                {% endfor %}
+                {% if profile.files %}
+                <div class="files-section profile-files">
+                  <h4>Файлове</h4>
+                  <ul class="files">
+                    {% for file in profile.files %}
+                    <li>
+                      <a href="{{ file.url }}" target="_blank" rel="noopener">{{ file.name or file.filename }}</a>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %}
               </div>
             </div>
           </div>
+        </div>
 
+        <div class="panels-container entries-container">
           {% if entries %} {% for entry in entries %}
           <div class="panel">
             <div class="panel-heading collapsed" onclick="togglePanel({{ entry.id }})">
@@ -90,7 +111,7 @@
               <h3 class="panel-title">{{ display_title }}</h3>
               <span class="toggle-icon" aria-hidden="true">▾</span>
             </div>
-            <div class="panel-body collapsed" id="panel-body-{{ entry.id }}">
+            <div class="panel-body collapsed" data-collapsible="true" id="panel-body-{{ entry.id }}">
               <div class="panel-content">
                 <div class="panel-meta">
                   {% if entry.publish_date %}

@@ -41,6 +41,32 @@
                         <label for="profile-body">Съдържание</label>
                         <textarea id="profile-body" name="profile_body" rows="10" required>{{ profile.body }}</textarea>
                         </div>
+                        <div class="form-group">
+                            <label for="profile-pdf-label">Име на файла (PDF)</label>
+                            <input type="text" id="profile-pdf-label" name="profile_pdf_label" placeholder="Само за нови PDF">
+                            <small class="form-help">Името се прилага за ново качените PDF.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-pdf-files">Добавяне на PDF (по избор)</label>
+                            <input type="file" id="profile-pdf-files" name="profile_pdf_files" accept=".pdf" multiple>
+                            <small class="form-help">До 10 PDF файла.</small>
+                        </div>
+                        <div class="form-group profile-files-group">
+                            <label>Качени файлове</label>
+                            {% set profile_files = profile.files if profile.files is defined else [] %}
+                            {% if profile_files and profile_files|length > 0 %}
+                            <ul class="files profile-files-list">
+                                {% for file in profile_files %}
+                                <li data-filename="{{ file.filename }}">
+                                    <a href="{{ file.url }}" target="_blank" rel="noopener">{{ file.name or file.filename }}</a>
+                                    <button type="button" class="btn-small btn-delete profile-file-delete">Изтрий</button>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="no-files profile-no-files">Няма прикачени файлове.</p>
+                            {% endif %}
+                        </div>
                         <button type="submit" class="btn btn-primary">Запази</button>
                     </form>
                 </div>
@@ -73,14 +99,14 @@
                             </div>
                             {% endfor %}
                         </div>
-                        <button onclick="showAddPageModal()" class="btn btn-primary btn-small btn-compact btn-static" style="margin-top: 15px;">Нова страница</button>
+                        <button onclick="showAddPageModal()" class="btn btn-primary btn-small btn-compact btn-static btn-new-page" style="margin-top: 15px;">Нова страница</button>
                     </div>
                 </div>
             </div>
 
             <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
                 <div class="section-header">
-                    <h2>Нов запис</h2>
+                    <h2>Нов запис на страница</h2>
                     <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>
                 </div>
                 <div class="section-body">
