@@ -1,21 +1,6 @@
 const log = (...args) => console.log('[admin]', ...args);
 const logError = (...args) => console.error('[admin]', ...args);
 
-function sendLogoutBeacon() {
-    try {
-        if (navigator.sendBeacon) {
-            navigator.sendBeacon('/logout');
-        } else {
-            fetch('/logout', { method: 'POST', keepalive: true });
-        }
-    } catch (err) {
-        logError('Logout beacon failed', err);
-    }
-}
-
-window.addEventListener('pagehide', sendLogoutBeacon);
-window.addEventListener('beforeunload', sendLogoutBeacon);
-
 function syncDateField(field) {
     const input = field.querySelector('input');
     if (!input) {
