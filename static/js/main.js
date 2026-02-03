@@ -25,7 +25,7 @@ async function searchEntries(query) {
     searchTimeout = setTimeout(async () => {
         const trimmed = query.trim();
 
-        if (trimmed.length < 2) {
+        if (trimmed.length === 0) {
             window.location.reload();
             return;
         }
