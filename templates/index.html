@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профил на купувача</title>
+    <title>РџСЂРѕС„РёР» РЅР° РєСѓРїСѓРІР°С‡Р°</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -13,12 +13,12 @@
                 <div class="brand">
                     <span class="brand-mark">AZ</span>
                     <div class="brand-text">
-                        <h1>Профил на купувача</h1>
-                        <p class="subtitle">Подреден преглед на записи, документи и детайли по страници</p>
+                        <h1>РџСЂРѕС„РёР» РЅР° РєСѓРїСѓРІР°С‡Р°</h1>
+                        <p class="subtitle">РџРѕРґСЂРµРґРµРЅ РїСЂРµРіР»РµРґ РЅР° Р·Р°РїРёСЃРё, РґРѕРєСѓРјРµРЅС‚Рё Рё РґРµС‚Р°Р№Р»Рё РїРѕ СЃС‚СЂР°РЅРёС†Рё</p>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <a class="ghost-link" href="{{ url_for('admin') }}">Админ панел</a>
+                    <a class="ghost-link" href="{{ url_for('admin') }}">РђРґРјРёРЅ РїР°РЅРµР»</a>
                 </div>
             </div>
         </header>
@@ -33,15 +33,15 @@
                 {% endfor %}
             </div>
             <div class="search-container">
-                <label class="search-label" for="search-input">Търсене</label>
+                <label class="search-label" for="search-input">РўСЉСЂСЃРµРЅРµ</label>
                 <div class="search-field">
                     <input
                         type="text"
                         id="search-input"
-                        placeholder="Търси в тази страница..."
+                        placeholder="РўСЉСЂСЃРё РІ С‚Р°Р·Рё СЃС‚СЂР°РЅРёС†Р°..."
                         oninput="searchEntries(this.value)"
                     >
-                    <span class="search-hint">Минимум 2 символа</span>
+                    <span class="search-hint">РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°</span>
                 </div>
             </div>
         </section>
@@ -53,7 +53,7 @@
                     <div class="panel">
                         <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
                             <h3 class="panel-title">{{ entry.heading }}</h3>
-                            <span class="toggle-icon" aria-hidden="true">Ў</span>
+                            <span class="toggle-icon" aria-hidden="true">РЋ</span>
                         </div>
                         <div class="panel-body" id="panel-{{ entry.id }}">
                             <div class="panel-content">
@@ -65,19 +65,19 @@
                                     <a href="{{ url_for('uploaded_file', filename=entry.pdf_file) }}"
                                        target="_blank"
                                        class="pdf-link">
-                                        Преглед на PDF документ
+                                        РџСЂРµРіР»РµРґ РЅР° PDF РґРѕРєСѓРјРµРЅС‚
                                     </a>
                                 </div>
                                 {% endif %}
 
-                                <small class="entry-date">Публикувано: {{ entry.date }}</small>
+                                <small class="entry-date">РџСѓР±Р»РёРєСѓРІР°РЅРѕ: {{ entry.date }}</small>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
                     <div class="no-entries">
-                        <p>Няма записи за тази страница. Добавете от <a href="{{ url_for('admin') }}">Админ панел</a>.</p>
+                        <p>РќСЏРјР° Р·Р°РїРёСЃРё Р·Р° С‚Р°Р·Рё СЃС‚СЂР°РЅРёС†Р°. Р”РѕР±Р°РІРµС‚Рµ РѕС‚ <a href="{{ url_for('admin') }}">РђРґРјРёРЅ РїР°РЅРµР»</a>.</p>
                     </div>
                 {% endif %}
             </div>

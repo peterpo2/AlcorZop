@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ панел - Управление</title>
+    <title>РђРґРјРёРЅ РїР°РЅРµР» - РЈРїСЂР°РІР»РµРЅРёРµ</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -13,41 +13,41 @@
                 <div class="brand">
                     <span class="brand-mark">AZ</span>
                     <div class="brand-text">
-                        <h1>Админ панел</h1>
-                        <p class="subtitle">Управление на страници, записи и документи</p>
+                        <h1>РђРґРјРёРЅ РїР°РЅРµР»</h1>
+                        <p class="subtitle">РЈРїСЂР°РІР»РµРЅРёРµ РЅР° СЃС‚СЂР°РЅРёС†Рё, Р·Р°РїРёСЃРё Рё РґРѕРєСѓРјРµРЅС‚Рё</p>
                     </div>
                 </div>
                 <nav class="header-actions">
-                    <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn">Начало</button>
-                    <button onclick="location.href='{{ url_for('admin') }}'" class="nav-btn active">Админ</button>
+                    <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn">РќР°С‡Р°Р»Рѕ</button>
+                    <button onclick="location.href='{{ url_for('admin') }}'" class="nav-btn active">РђРґРјРёРЅ</button>
                 </nav>
             </div>
         </header>
 
         <main class="admin-main">
             <div class="admin-section">
-                <h2>Страници</h2>
+                <h2>РЎС‚СЂР°РЅРёС†Рё</h2>
                 <div class="page-management">
                     <div class="pages-list-admin">
                         {% for page in pages %}
                         <div class="page-item" id="page-item-{{ page.id }}">
                             <span class="page-name">{{ page.name }}</span>
                             <div class="page-actions">
-                                <button onclick="renamePage({{ page.id }}, '{{ page.name }}')" class="btn-small btn-edit">Преименувай</button>
-                                <button onclick="deletePage({{ page.id }})" class="btn-small btn-delete">Изтрий</button>
+                                <button onclick="renamePage({{ page.id }}, '{{ page.name }}')" class="btn-small btn-edit">РџСЂРµРёРјРµРЅСѓРІР°Р№</button>
+                                <button onclick="deletePage({{ page.id }})" class="btn-small btn-delete">РР·С‚СЂРёР№</button>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                    <button onclick="showAddPageModal()" class="btn btn-primary" style="margin-top: 15px;">Нова страница</button>
+                    <button onclick="showAddPageModal()" class="btn btn-primary" style="margin-top: 15px;">РќРѕРІР° СЃС‚СЂР°РЅРёС†Р°</button>
                 </div>
             </div>
 
             <div class="admin-section">
-                <h2>Нов запис</h2>
+                <h2>РќРѕРІ Р·Р°РїРёСЃ</h2>
                 <form id="add-entry-form" enctype="multipart/form-data">
                     <div class="form-group">
-                        <label for="page_id">Избери страница</label>
+                        <label for="page_id">РР·Р±РµСЂРё СЃС‚СЂР°РЅРёС†Р°</label>
                         <select id="page_id" name="page_id" required>
                             {% for page in pages %}
                             <option value="{{ page.id }}">{{ page.name }}</option>
@@ -55,33 +55,33 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="heading">Заглавие на панела</label>
+                        <label for="heading">Р—Р°РіР»Р°РІРёРµ РЅР° РїР°РЅРµР»Р°</label>
                         <input type="text" id="heading" name="heading" required>
                     </div>
                     <div class="form-group">
-                        <label for="title">Подзаглавие</label>
+                        <label for="title">РџРѕРґР·Р°РіР»Р°РІРёРµ</label>
                         <input type="text" id="title" name="title" required>
                     </div>
                     <div class="form-group">
-                        <label for="content">Съдържание</label>
+                        <label for="content">РЎСЉРґСЉСЂР¶Р°РЅРёРµ</label>
                         <textarea id="content" name="content" rows="5" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="pdf_file">Прикачи PDF (по избор)</label>
+                        <label for="pdf_file">РџСЂРёРєР°С‡Рё PDF (РїРѕ РёР·Р±РѕСЂ)</label>
                         <input type="file" id="pdf_file" name="pdf_file" accept=".pdf">
-                        <small class="form-help">Максимален размер: 16MB</small>
+                        <small class="form-help">РњР°РєСЃРёРјР°Р»РµРЅ СЂР°Р·РјРµСЂ: 16MB</small>
                     </div>
-                    <button type="submit" class="btn btn-primary">Добави</button>
+                    <button type="submit" class="btn btn-primary">Р”РѕР±Р°РІРё</button>
                 </form>
             </div>
 
             <div class="admin-section">
-                <h2>Съществуващи записи</h2>
+                <h2>РЎСЉС‰РµСЃС‚РІСѓРІР°С‰Рё Р·Р°РїРёСЃРё</h2>
 
                 <div class="filter-section">
-                    <label for="filter-page">Филтър по страница</label>
+                    <label for="filter-page">Р¤РёР»С‚СЉСЂ РїРѕ СЃС‚СЂР°РЅРёС†Р°</label>
                     <select id="filter-page" onchange="filterEntries()">
-                        <option value="all">Всички страници</option>
+                        <option value="all">Р’СЃРёС‡РєРё СЃС‚СЂР°РЅРёС†Рё</option>
                         {% for page in pages %}
                         <option value="{{ page.id }}">{{ page.name }}</option>
                         {% endfor %}
@@ -107,13 +107,13 @@
                                 <small>{{ entry.date }}</small>
                             </div>
                             <div class="entry-actions">
-                                <button onclick="editEntry({{ entry.id }})" class="btn btn-edit">Редактирай</button>
-                                <button onclick="deleteEntry({{ entry.id }})" class="btn btn-delete">Изтрий</button>
+                                <button onclick="editEntry({{ entry.id }})" class="btn btn-edit">Р РµРґР°РєС‚РёСЂР°Р№</button>
+                                <button onclick="deleteEntry({{ entry.id }})" class="btn btn-delete">РР·С‚СЂРёР№</button>
                             </div>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p class="no-entries">Няма записи.</p>
+                        <p class="no-entries">РќСЏРјР° Р·Р°РїРёСЃРё.</p>
                     {% endif %}
                 </div>
             </div>
@@ -123,11 +123,11 @@
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>Редакция на запис</h2>
+            <h2>Р РµРґР°РєС†РёСЏ РЅР° Р·Р°РїРёСЃ</h2>
             <form id="edit-entry-form" enctype="multipart/form-data">
                 <input type="hidden" id="edit-id" name="id">
                 <div class="form-group">
-                    <label for="edit-page_id">Избери страница</label>
+                    <label for="edit-page_id">РР·Р±РµСЂРё СЃС‚СЂР°РЅРёС†Р°</label>
                     <select id="edit-page_id" name="page_id" required>
                         {% for page in pages %}
                         <option value="{{ page.id }}">{{ page.name }}</option>
@@ -135,24 +135,24 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="edit-heading">Заглавие на панела</label>
+                    <label for="edit-heading">Р—Р°РіР»Р°РІРёРµ РЅР° РїР°РЅРµР»Р°</label>
                     <input type="text" id="edit-heading" name="heading" required>
                 </div>
                 <div class="form-group">
-                    <label for="edit-title">Подзаглавие</label>
+                    <label for="edit-title">РџРѕРґР·Р°РіР»Р°РІРёРµ</label>
                     <input type="text" id="edit-title" name="title" required>
                 </div>
                 <div class="form-group">
-                    <label for="edit-content">Съдържание</label>
+                    <label for="edit-content">РЎСЉРґСЉСЂР¶Р°РЅРёРµ</label>
                     <textarea id="edit-content" name="content" rows="5" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="edit-pdf_file">Смяна на PDF (по избор)</label>
+                    <label for="edit-pdf_file">РЎРјСЏРЅР° РЅР° PDF (РїРѕ РёР·Р±РѕСЂ)</label>
                     <input type="file" id="edit-pdf_file" name="pdf_file" accept=".pdf">
                     <small class="form-help" id="current-pdf-info"></small>
                 </div>
-                <button type="submit" class="btn btn-primary">Обнови</button>
-                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Откажи</button>
+                <button type="submit" class="btn btn-primary">РћР±РЅРѕРІРё</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">РћС‚РєР°Р¶Рё</button>
             </form>
         </div>
     </div>
@@ -160,15 +160,15 @@
     <div id="page-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closePageModal()">&times;</span>
-            <h2 id="page-modal-title">Нова страница</h2>
+            <h2 id="page-modal-title">РќРѕРІР° СЃС‚СЂР°РЅРёС†Р°</h2>
             <form id="page-form">
                 <input type="hidden" id="page-id" name="id">
                 <div class="form-group">
-                    <label for="page-name">Име на страница</label>
+                    <label for="page-name">РРјРµ РЅР° СЃС‚СЂР°РЅРёС†Р°</label>
                     <input type="text" id="page-name" name="name" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Запази</button>
-                <button type="button" onclick="closePageModal()" class="btn btn-secondary">Откажи</button>
+                <button type="submit" class="btn btn-primary">Р—Р°РїР°Р·Рё</button>
+                <button type="button" onclick="closePageModal()" class="btn btn-secondary">РћС‚РєР°Р¶Рё</button>
             </form>
         </div>
     </div>
