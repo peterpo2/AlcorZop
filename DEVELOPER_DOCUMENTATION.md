@@ -7,9 +7,10 @@ This repository contains a Flask web application for managing collapsible panel 
 - Entry point: `app.py`
 - Framework: Flask (Python)
 - Server: Flask dev server started by `python app.py`
-- Storage: JSON files on disk for entries and pages
+- Storage: JSON files on disk for entries, pages, and profile content
 - File uploads: PDF files stored under `uploads/`
-- Admin access: HTTP Basic Auth credentials loaded from `cred.json`
+- Admin access: session-based login using credentials from `cred.json`
+- Logs: `logs/app.log` (rotating file handler)
 
 ## Architecture And Data Flow
 - HTTP routes in `app.py` expose:
@@ -18,29 +19,38 @@ This repository contains a Flask web application for managing collapsible panel 
 - Front-end JavaScript uses `fetch()` to call API endpoints.
 - Entries are stored in `entries.json` and loaded on each request.
 - Pages are stored in `pages.json` and loaded on each request.
+- Profile content is stored in `profile.json`.
 - Uploaded PDFs are saved under `uploads/` and served via `/uploads/<filename>`.
 
 ## Key Files
-- `app.py`: Flask routes, data loading/saving, upload handling, search.
+- `app.py`: Flask routes, data loading/saving, upload handling, search, logging.
 - `templates/index.html`: Public viewer with panels and search.
-- `templates/admin.html`: Admin UI for pages and entries.
+- `templates/admin.html`: Admin UI for pages, entries, and profile management.
+- `templates/admin_login.html`: Admin login form.
+- `templates/pdf_viewer.html`: PDF viewer page.
 - `static/js/main.js`: Panel toggling and search rendering.
 - `static/js/admin.js`: Admin CRUD actions and modal logic.
 - `static/css/style.css`: UI styling.
 - `entries.json`: Entry data store (list of entries).
-- `pages.json`: Page data store (list of pages).
+- `pages.json`: Page configuration store (list of pages).
+- `profile.json`: Buyer profile store.
 - `uploads/`: PDF uploads directory.
-- `cred.json`: Basic Auth credentials for `/admin`.
+- `cred.json`: Admin credentials.
 - `Dockerfile`, `docker-compose.yml`: Container build and runtime.
 
 ## Data Model
+
 Each entry in `entries.json`:
 - `id` (int)
 - `title` (str)
 - `heading` (str)
 - `content` (str)
 - `page_id` (int)
-- `pdf_file` (str or null)
+- `publish_date` (str)
+- `aop_number` (str)
+- `internal_number` (str)
+- `files` (list of {name, url, published_at})
+- `pdf_files` (list of {name, url, filename?})
 - `date` (str, `YYYY-MM-DD HH:MM:SS`)
 
 Each page in `pages.json`:
@@ -48,24 +58,31 @@ Each page in `pages.json`:
 - `name` (str)
 - `searchable` (bool)
 
+Profile in `profile.json`:
+- `title` (str)
+- `body` (str)
+- `files` (list of {name, url, filename?})
+
 ## API Endpoints
-Entries:
+
+Admin-protected (session or Basic Auth):
 - `GET /api/entries`
-- `POST /api/entries` (multipart form data; optional `pdf_file`)
-- `PUT /api/entries/<id>` (JSON or multipart form data)
+- `POST /api/entries`
+- `PUT /api/entries/<id>`
 - `DELETE /api/entries/<id>`
-
-Pages:
+- `DELETE /api/entries/<id>/pdfs`
 - `GET /api/pages`
-- `POST /api/pages` (JSON)
-- `PUT /api/pages/<id>` (JSON)
+- `POST /api/pages`
+- `PUT /api/pages/<id>`
 - `DELETE /api/pages/<id>`
+- `GET /api/profile`
+- `PUT /api/profile`
+- `DELETE /api/profile/pdfs/<filename>`
 
-Search:
+Public:
 - `GET /api/search?q=<query>&page=<page_id>`
-
-Files:
 - `GET /uploads/<filename>`
+- `GET /pdf/<filename>`
 
 ## Running Locally
 1. Install dependencies:
@@ -85,34 +102,22 @@ Files:
 
 ## Configuration
 - Upload folder: `uploads/` (created automatically).
-- Max upload size: configured in `app.py` via `app.config['MAX_CONTENT_LENGTH']`.
+- Max upload size: configured in `app.py` via `app.config['MAX_CONTENT_LENGTH']` (32MB).
 - Admin credentials: stored in `cred.json`.
+- Admin session uses a non-permanent cookie by default.
+
+## Logging
+- File: `logs/app.log`
+- Includes request timing, CRUD actions, and file operations.
 
 ## Security Notes
-- Admin uses HTTP Basic Auth over plaintext unless served behind HTTPS.
-- `cred.json` contains credentials in repo; treat as development-only or move to environment variables for production.
+- Admin credentials are stored in `cred.json` (development-only).
 - No CSRF protection on admin endpoints.
+- For production, serve behind HTTPS and move credentials to environment variables.
 
-## Known Issues And Risks (From Code Review)
-1. Update entry with no new PDF fails.
-   - `PUT /api/entries/<id>` returns `No file part` when no file is uploaded, even though the PDF is optional.
-2. Update entry with a new PDF does not save the file.
-   - The update route validates file type but never saves the file or sets `pdf_filename`.
-3. File size mismatch in code vs UI.
-   - `app.py` sets `MAX_CONTENT_LENGTH` to 32MB but the UI and README say 16MB.
-4. Potential encoding mismatch in `pages.json`.
-   - The file appears to be non-UTF-8 (Windows-1251), but `app.py` reads as UTF-8. This can cause garbled Bulgarian text.
-5. Duplicate project folder `panel_system/`.
-   - This looks like an older copy. It is not referenced by the root app or Docker setup and may cause confusion.
-6. `landing.html` exists but is not routed.
-   - There is no Flask route that renders `templates/landing.html`.
-
-## Suggested Improvements
-- Fix update endpoint to allow edits without uploading a file and to properly save new PDFs.
-- Align max upload size in code, UI, and README.
-- Convert `pages.json` to UTF-8 or update loader to handle the file encoding.
-- Move admin credentials to environment variables and avoid committing real credentials.
-- Add tests for API endpoints and file uploads.
+## Known Issues And Risks
+- `landing.html` exists but is not routed.
+- JSON file storage is not safe for concurrent writes across multiple processes.
 
 ## Troubleshooting
 - If pages or entries disappear, check `entries.json` and `pages.json` for valid JSON.
@@ -122,7 +127,3 @@ Files:
 ## Developer Notes
 - This app is stateful and stores data on disk. For multi-instance deployment, replace JSON storage with a database.
 - The Flask server runs in debug mode when launched via `app.py`.
-
-
-PS C:\Popoff\AlcorZop\AlcorZop>
-python tools\import_wayback.py --csv urls.csv --sleep 0.5

@@ -1,11 +1,15 @@
-﻿from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+﻿from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, Response, session, g
 from functools import wraps
-from flask import Response
 import json
 import os
 from datetime import datetime
 import html
+import logging
+from logging.handlers import RotatingFileHandler
 import re
+from time import perf_counter
+from urllib.parse import urlparse
+from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 
@@ -15,6 +19,23 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Store PDFs in the uploads folder (case-sensitive on Linux/Docker).
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY') or os.environ.get('SECRET_KEY') or os.urandom(24)
+app.secret_key = app.config['SECRET_KEY']
+
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
+def configure_logging():
+    log_path = os.path.join(LOG_DIR, 'app.log')
+    handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=5, encoding='utf-8')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s [%(name)s] %(message)s')
+    handler.setFormatter(formatter)
+    if not any(isinstance(h, RotatingFileHandler) for h in app.logger.handlers):
+        app.logger.setLevel(logging.INFO)
+        app.logger.addHandler(handler)
+        app.logger.propagate = True
+
+configure_logging()
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -43,44 +64,124 @@ def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+def load_json_file(path, default):
+    if not os.path.exists(path):
+        app.logger.info('data.load.missing path=%s', path)
+        return default
+    try:
+        with open(path, 'r', encoding='utf-8-sig') as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        app.logger.error('data.load.error path=%s error=%s', path, exc)
+        return default
+    except Exception:
+        app.logger.exception('data.load.exception path=%s', path)
+        return default
+
+
+def save_json_file(path, payload):
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        count = len(payload) if isinstance(payload, list) else 'n/a'
+        app.logger.info('data.save path=%s count=%s', path, count)
+    except Exception:
+        app.logger.exception('data.save.failed path=%s', path)
+        raise
+
+@app.before_request
+def start_timer():
+    g.request_start = perf_counter()
+
+
+@app.after_request
+def log_request(response):
+    start = getattr(g, 'request_start', None)
+    duration = perf_counter() - start if start else 0.0
+    app.logger.info('http %s %s %s %.3fs', request.method, request.path, response.status_code, duration)
+    if request.path.startswith('/admin') or request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+    return response
+
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    if isinstance(error, HTTPException):
+        return error
+    app.logger.exception('unhandled error')
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+    return error
+
 def load_entries():
     """Load entries from JSON file"""
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            entries = json.load(f)
-            changed = False
-            for entry in entries:
-                normalize_pdf_items(entry)
-                if cleanup_entry_fields(entry):
-                    changed = True
-            if changed:
-                save_entries(entries)
-            return entries
-    return []
+    entries = load_json_file(DATA_FILE, [])
+    if not isinstance(entries, list):
+        app.logger.error('entries.invalid type=%s', type(entries))
+        return []
+    changed = False
+    for entry in entries:
+        if normalize_pdf_items(entry):
+            changed = True
+        if cleanup_entry_fields(entry):
+            changed = True
+    if changed:
+        save_entries(entries)
+        app.logger.info('entries.normalized count=%s', len(entries))
+    return entries
+
+def extract_local_pdf_filename(value):
+    if not value:
+        return None
+    if isinstance(value, dict):
+        candidate = value.get('filename') or value.get('file')
+        if candidate:
+            return candidate
+        value = value.get('url') or ''
+    if isinstance(value, str):
+        if value.startswith('/pdf/'):
+            return value.split('/pdf/', 1)[1]
+        parsed = urlparse(value)
+        if parsed.path.startswith('/pdf/'):
+            return parsed.path.split('/pdf/', 1)[1]
+    return None
 
 def normalize_pdf_items(entry):
     """Normalize stored PDF files to a list of dicts.
 
     Supports legacy uploads (filename/label) and Wayback links (name/url).
     """
+    before = entry.get('pdf_files') if 'pdf_files' in entry else entry.get('pdf_file')
     pdf_items = []
     if 'pdf_files' in entry:
-        for item in entry.get('pdf_files', []):
+        raw = entry.get('pdf_files', [])
+        if isinstance(raw, list):
+            items = raw
+        else:
+            items = [raw]
+        for item in items:
             if isinstance(item, dict):
                 url = item.get('url') or ''
                 name = item.get('name') or item.get('label') or ''
                 filename = item.get('filename') or item.get('file')
-                if url or name:
-                    pdf_items.append({'name': name, 'url': url})
-                elif filename:
-                    pdf_items.append({'name': name or filename, 'url': f"/pdf/{filename}"})
+                if not filename and url:
+                    filename = extract_local_pdf_filename(url)
+                if url or name or filename:
+                    payload = {'name': name, 'url': url}
+                    if filename:
+                        payload['filename'] = filename
+                    pdf_items.append(payload)
             elif isinstance(item, str):
-                pdf_items.append({'name': item, 'url': f"/pdf/{item}"})
+                filename = item
+                pdf_items.append({'name': filename, 'url': f"/pdf/{filename}", 'filename': filename})
     else:
         legacy = entry.pop('pdf_file', None)
         if legacy:
-            pdf_items.append({'name': legacy, 'url': f"/pdf/{legacy}"})
+            pdf_items.append({'name': legacy, 'url': f"/pdf/{legacy}", 'filename': legacy})
     entry['pdf_files'] = pdf_items
+    return before != pdf_items
 
 def normalize_files_items(entry):
     """Normalize structured files to a list of {name, url, published_at} dicts."""
@@ -158,29 +259,41 @@ def normalize_incoming_pdf_links(items):
         name = item.get('name') or item.get('label') or ''
         url = item.get('url') or ''
         if name or url:
-            links.append({'name': name, 'url': url})
+            payload = {'name': name, 'url': url}
+            filename = extract_local_pdf_filename(url)
+            if filename:
+                payload['filename'] = filename
+            links.append(payload)
     return links
 
 def save_entries(entries):
     """Save entries to JSON file"""
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(entries, f, ensure_ascii=False, indent=2)
+    save_json_file(DATA_FILE, entries)
 
 def load_pages():
     """Load pages from JSON file"""
-    if os.path.exists(PAGES_FILE):
-        with open(PAGES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return [
-        {"id": 1, "name": "Page 1"},
-        {"id": 2, "name": "Page 2"},
-        {"id": 3, "name": "Page 3"}
-    ]
+    pages = load_json_file(PAGES_FILE, [])
+    if not pages:
+        return [
+            {"id": 1, "name": "Page 1", "searchable": True},
+            {"id": 2, "name": "Page 2", "searchable": True},
+            {"id": 3, "name": "Page 3", "searchable": True},
+        ]
+    if not isinstance(pages, list):
+        app.logger.error('pages.invalid type=%s', type(pages))
+        return []
+    changed = False
+    for page in pages:
+        if 'searchable' not in page:
+            page['searchable'] = True
+            changed = True
+    if changed:
+        save_pages(pages)
+    return pages
 
 def save_pages(pages):
     """Save pages to JSON file"""
-    with open(PAGES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(pages, f, ensure_ascii=False, indent=2)
+    save_json_file(PAGES_FILE, pages)
 
 def default_profile():
     return {
@@ -233,19 +346,17 @@ def normalize_profile_body(text):
     return body
 
 def load_profile():
-    if os.path.exists(PROFILE_FILE):
-        with open(PROFILE_FILE, 'r', encoding='utf-8-sig') as f:
-            data = json.load(f)
-            if isinstance(data, dict) and data.get('title') and data.get('body'):
-                normalized_body = normalize_profile_body(data.get('body', ''))
-                files = data.get('files')
-                if not isinstance(files, list):
-                    files = []
-                data['files'] = files
-                if normalized_body != data.get('body'):
-                    data['body'] = normalized_body
-                    save_profile(data)
-                return data
+    data = load_json_file(PROFILE_FILE, {})
+    if isinstance(data, dict) and data.get('title') and data.get('body'):
+        normalized_body = normalize_profile_body(data.get('body', ''))
+        files = data.get('files')
+        if not isinstance(files, list):
+            files = []
+        data['files'] = files
+        if normalized_body != data.get('body'):
+            data['body'] = normalized_body
+            save_profile(data)
+        return data
     return default_profile()
 
 def save_profile(profile):
@@ -254,14 +365,16 @@ def save_profile(profile):
         'body': normalize_profile_body(profile.get('body', '')),
         'files': profile.get('files', [])
     }
-    with open(PROFILE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(profile, f, ensure_ascii=False, indent=2)
+    save_json_file(PROFILE_FILE, profile)
 
 CREDENTIALS_FILE = 'cred.json'
 
 def load_admin_credentials():
-    with open(CREDENTIALS_FILE, 'r') as f:
-        return json.load(f)
+    creds = load_json_file(CREDENTIALS_FILE, {})
+    if not isinstance(creds, dict):
+        app.logger.error('creds.invalid type=%s', type(creds))
+        return {}
+    return creds
 
 def check_auth(username, password):
     creds = load_admin_credentials()
@@ -270,20 +383,33 @@ def check_auth(username, password):
         password == creds.get('password')
     )
 
-def authenticate():
-    return Response(
-        'Authentication required',
-        401,
-        {'WWW-Authenticate': 'Basic realm="Admin Area"'}
-    )
+def is_basic_auth_valid():
+    auth = request.authorization
+    return bool(auth and check_auth(auth.username, auth.password))
 
-def requires_auth(f):
+def is_session_auth():
+    return session.get('admin_authenticated') is True
+
+def set_admin_session(username: str):
+    session.permanent = False
+    session['admin_authenticated'] = True
+    session['admin_user'] = username
+    session['admin_login_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+def clear_admin_session():
+    session.pop('admin_authenticated', None)
+    session.pop('admin_user', None)
+    session.pop('admin_login_at', None)
+
+def requires_admin(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
+        if is_session_auth() or is_basic_auth_valid():
+            return f(*args, **kwargs)
+        app.logger.warning('auth.denied path=%s', request.path)
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        return redirect(url_for('admin_login', next=request.full_path))
     return decorated
 
 
@@ -306,6 +432,7 @@ def index():
 
     # Filter entries by page
     page_entries = [e for e in entries if e.get('page_id') == page_id]
+    app.logger.info('index page_id=%s entries=%s', page_id, len(page_entries))
 
     return render_template(
         'index.html',
@@ -321,31 +448,63 @@ def page_view(page_id):
     """Shortcut route to view a specific page."""
     return redirect(url_for('index', page=page_id))
 
+def safe_next_url(target):
+    if not target:
+        return None
+    if target.startswith('/') and not target.startswith('//'):
+        return target
+    return None
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    next_url = safe_next_url(request.args.get('next') or request.form.get('next'))
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        password = (request.form.get('password') or '').strip()
+        if check_auth(username, password):
+            set_admin_session(username)
+            app.logger.info('auth.login.success user=%s', username)
+            return redirect(next_url or url_for('admin'))
+        app.logger.warning('auth.login.failed user=%s', username)
+        error = '????????? ????????????? ??? ??? ??????.'
+    return render_template('admin_login.html', error=error, next=next_url or '')
+
+
 @app.route('/admin')
-@requires_auth
 def admin():
     """Admin page for managing entries"""
+    if not is_session_auth():
+        return redirect(url_for('admin_login', next=request.full_path))
     entries = load_entries()
     pages = load_pages()
     profile = load_profile()
+    app.logger.info('admin.view user=%s', session.get('admin_user'))
     return render_template('admin.html', entries=entries, pages=pages, profile=profile)
 
-@app.route('/logout')
+
+@app.route('/logout', methods=['GET', 'POST'])
 def logout():
-    """Force browser to drop cached Basic Auth credentials."""
-    return Response(
-        'Logged out',
-        401,
-        {'WWW-Authenticate': 'Basic realm="Logged Out"'}
-    )
+    """Clear admin session and optionally force Basic Auth logout."""
+    clear_admin_session()
+    app.logger.info('auth.logout')
+    if request.method == 'POST':
+        resp = Response('', 204)
+    else:
+        resp = redirect(url_for('admin_login'))
+    resp.headers['WWW-Authenticate'] = 'Basic realm="Logged Out"'
+    return resp
 
 @app.route('/api/entries', methods=['GET'])
+@requires_admin
 def get_entries():
     """API endpoint to get all entries"""
     entries = load_entries()
     return jsonify(entries)
 
 @app.route('/api/entries', methods=['POST'])
+@requires_admin
 def add_entry():
     """API endpoint to add a new entry with optional PDF"""
     entries = load_entries()
@@ -414,7 +573,7 @@ def add_entry():
         filename = item.get('filename')
         label = item.get('label') or filename
         if filename:
-            pdf_links.append({'name': label, 'url': f"/pdf/{filename}"})
+            pdf_links.append({'name': label, 'url': f"/pdf/{filename}", 'filename': filename})
 
     new_entry = {
         'id': max([e['id'] for e in entries], default=0) + 1,
@@ -436,10 +595,12 @@ def add_entry():
     
     entries.append(new_entry)
     save_entries(entries)
-    
+    app.logger.info('entries.add id=%s page_id=%s pdfs=%s', new_entry.get('id'), page_id, len(pdf_links))
+
     return jsonify({'success': True, 'entry': new_entry})
 
 @app.route('/api/entries/<int:entry_id>', methods=['DELETE'])
+@requires_admin
 def delete_entry(entry_id):
     """API endpoint to delete an entry"""
     entries = load_entries()
@@ -448,20 +609,23 @@ def delete_entry(entry_id):
     for entry in entries:
         if entry['id'] == entry_id and entry.get('pdf_files'):
             for pdf_item in entry.get('pdf_files', []):
-                pdf_name = pdf_item.get('filename') if isinstance(pdf_item, dict) else pdf_item
+                pdf_name = extract_local_pdf_filename(pdf_item)
                 if not pdf_name:
                     continue
                 pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
                 if os.path.exists(pdf_path):
                     os.remove(pdf_path)
+                    app.logger.info('entries.delete.pdf filename=%s', pdf_name)
             break
     
     entries = [e for e in entries if e['id'] != entry_id]
     save_entries(entries)
-    
+    app.logger.info('entries.delete id=%s', entry_id)
+
     return jsonify({'success': True})
 
 @app.route('/api/entries/<int:entry_id>', methods=['PUT'])
+@requires_admin
 def update_entry(entry_id):
     """API endpoint to update an entry"""
     entries = load_entries()
@@ -482,7 +646,6 @@ def update_entry(entry_id):
         source_url = data.get('source_url', '')
         imported_at = data.get('imported_at', '')
         page_id = data.get('page_id', 1)
-        pdf_filenames = None
     else:
         title = request.form.get('title', '')
         heading = request.form.get('heading', '')
@@ -566,30 +729,34 @@ def update_entry(entry_id):
                     label = item.get('label') or filename
                     if filename:
                         entry['pdf_files'] = (entry.get('pdf_files') or []) + [
-                            {'name': label, 'url': f"/pdf/{filename}"}
+                            {'name': label, 'url': f"/pdf/{filename}", 'filename': filename}
                         ]
             cleanup_entry_fields(entry)
             break
     
     save_entries(entries)
+    app.logger.info('entries.update id=%s page_id=%s', entry_id, page_id)
     return jsonify({'success': True})
 
 @app.route('/api/entries/<int:entry_id>/pdfs', methods=['DELETE'])
+@requires_admin
 def delete_entry_pdfs(entry_id):
     """Remove all PDFs for a given entry"""
     entries = load_entries()
     for entry in entries:
         if entry['id'] == entry_id:
             for pdf_item in entry.get('pdf_files', []):
-                pdf_name = pdf_item.get('filename') if isinstance(pdf_item, dict) else pdf_item
+                pdf_name = extract_local_pdf_filename(pdf_item)
                 if not pdf_name:
                     continue
                 pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
                 if os.path.exists(pdf_path):
                     os.remove(pdf_path)
+                    app.logger.info('entries.delete.pdf filename=%s', pdf_name)
             entry['pdf_files'] = []
             break
     save_entries(entries)
+    app.logger.info('entries.delete_pdfs id=%s', entry_id)
     return jsonify({'success': True})
 
 @app.route('/uploads/<filename>')
@@ -608,16 +775,19 @@ def pdf_viewer(filename):
     return render_template('pdf_viewer.html', filename=filename)
 
 @app.route('/api/pages', methods=['GET'])
+@requires_admin
 def get_pages():
     """API endpoint to get all pages"""
     pages = load_pages()
     return jsonify(pages)
 
 @app.route('/api/profile', methods=['GET'])
+@requires_admin
 def get_profile():
     return jsonify(load_profile())
 
 @app.route('/api/profile', methods=['PUT'])
+@requires_admin
 def update_profile():
     if request.is_json:
         data = request.json or {}
@@ -628,6 +798,7 @@ def update_profile():
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         profile = {'title': title, 'body': body, 'files': files}
         save_profile(profile)
+        app.logger.info('profile.update files=%s', len(files))
         return jsonify({'success': True, 'profile': profile})
 
     title = (request.form.get('title') or '').strip()
@@ -665,9 +836,11 @@ def update_profile():
 
     profile = {'title': title, 'body': body, 'files': existing_files}
     save_profile(profile)
+    app.logger.info('profile.update files=%s', len(existing_files))
     return jsonify({'success': True, 'profile': profile})
 
 @app.route('/api/profile/pdfs/<filename>', methods=['DELETE'])
+@requires_admin
 def delete_profile_pdf(filename):
     if not allowed_file(filename):
         return jsonify({'success': False, 'error': 'Invalid file'}), 400
@@ -686,9 +859,11 @@ def delete_profile_pdf(filename):
             os.remove(pdf_path)
     profile['files'] = updated_files
     save_profile(profile)
+    app.logger.info('profile.delete_pdf filename=%s removed=%s', filename, removed)
     return jsonify({'success': True, 'removed': removed})
 
 @app.route('/api/pages', methods=['POST'])
+@requires_admin
 def add_page():
     """API endpoint to add a new page"""
     data = request.json
@@ -702,7 +877,8 @@ def add_page():
     
     pages.append(new_page)
     save_pages(pages)
-    
+    app.logger.info('pages.add id=%s name=%s', new_page.get('id'), new_page.get('name'))
+
     return jsonify({'success': True, 'page': new_page})
 
 @app.route('/api/search')
@@ -749,9 +925,11 @@ def search_entries():
         if query in haystack:
             results.append(e)
 
+    app.logger.info('search query=%s results=%s page_id=%s', query, len(results), page_id or '')
     return jsonify(results)
 
 @app.route('/api/pages/<int:page_id>', methods=['PUT'])
+@requires_admin
 def update_page(page_id):
     """API endpoint to rename a page"""
     data = request.json
@@ -763,9 +941,11 @@ def update_page(page_id):
             break
     
     save_pages(pages)
+    app.logger.info('pages.update id=%s', page_id)
     return jsonify({'success': True})
 
 @app.route('/api/pages/<int:page_id>', methods=['DELETE'])
+@requires_admin
 def delete_page(page_id):
     """API endpoint to delete a page"""
     pages = load_pages()
@@ -778,7 +958,8 @@ def delete_page(page_id):
     
     pages = [p for p in pages if p['id'] != page_id]
     save_pages(pages)
-    
+    app.logger.info('pages.delete id=%s', page_id)
+
     return jsonify({'success': True})
 
 if __name__ == '__main__':

@@ -1,4 +1,21 @@
-// Handle form submission for adding new entry with file upload
+const log = (...args) => console.log('[admin]', ...args);
+const logError = (...args) => console.error('[admin]', ...args);
+
+function sendLogoutBeacon() {
+    try {
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon('/logout');
+        } else {
+            fetch('/logout', { method: 'POST', keepalive: true });
+        }
+    } catch (err) {
+        logError('Logout beacon failed', err);
+    }
+}
+
+window.addEventListener('pagehide', sendLogoutBeacon);
+window.addEventListener('beforeunload', sendLogoutBeacon);
+
 function syncDateField(field) {
     const input = field.querySelector('input');
     if (!input) {
@@ -21,7 +38,7 @@ function setupDateFields() {
 }
 
 function setupCollapsibles() {
-    document.querySelectorAll('.admin-section[data-collapsible=\"true\"]').forEach(section => {
+    document.querySelectorAll('.admin-section[data-collapsible="true"]').forEach(section => {
         const toggle = section.querySelector('.section-toggle');
         const body = section.querySelector('.section-body');
         const isCollapsed = section.dataset.collapsed === 'true';
@@ -79,7 +96,7 @@ function setupProfileForm() {
             });
             const result = await response.json();
             if (result.success) {
-                alert('Профилът е обновен успешно!');
+                alert('Профилът е обновен успешно.');
                 if (fileInput) {
                     fileInput.value = '';
                 }
@@ -93,7 +110,7 @@ function setupProfileForm() {
                 alert(result.error || 'Неуспешно обновяване на профил.');
             }
         } catch (error) {
-            console.error('Error:', error);
+            logError('Profile update failed', error);
             alert('Възникна грешка при обновяване на профил.');
         }
     });
@@ -177,7 +194,7 @@ function setupProfileFileDeletes() {
                 alert(result.error || 'Неуспешно изтриване на PDF.');
             }
         } catch (error) {
-            console.error('Error:', error);
+            logError('Profile PDF delete failed', error);
             alert('Възникна грешка при изтриване на PDF.');
         }
     });
@@ -188,46 +205,50 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCollapsibles();
     setupProfileForm();
     setupProfileFileDeletes();
+    log('Admin UI ready');
 });
 
-document.getElementById('add-entry-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+const addForm = document.getElementById('add-entry-form');
+if (addForm) {
+    addForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('heading', document.getElementById('heading').value);
-    formData.append('aop_number', document.getElementById('aop_number').value);
-    formData.append('publish_date', document.getElementById('publish_date').value);
-    formData.append('title', document.getElementById('title').value);
-    formData.append('content', document.getElementById('content').value);
-    formData.append('page_id', document.getElementById('page_id').value);
-    formData.append('pdf_label', document.getElementById('pdf_label').value);
+        const formData = new FormData();
+        formData.append('heading', document.getElementById('heading').value);
+        formData.append('aop_number', document.getElementById('aop_number').value);
+        formData.append('publish_date', document.getElementById('publish_date').value);
+        formData.append('title', document.getElementById('title').value);
+        formData.append('content', document.getElementById('content').value);
+        formData.append('page_id', document.getElementById('page_id').value);
+        formData.append('pdf_label', document.getElementById('pdf_label').value);
 
-    const fileInput = document.getElementById('pdf_files');
-    if (fileInput.files.length > 0) {
-        Array.from(fileInput.files).forEach(file => {
-            formData.append('pdf_files', file);
-        });
-    }
-
-    try {
-        const response = await fetch('/api/entries', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            alert('Записът е добавен успешно!');
-            location.reload();
-        } else {
-            alert('Неуспешно добавяне на запис');
+        const fileInput = document.getElementById('pdf_files');
+        if (fileInput.files.length > 0) {
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('pdf_files', file);
+            });
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при добавяне на запис');
-    }
-});
+
+        try {
+            const response = await fetch('/api/entries', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Записът е добавен успешно.');
+                location.reload();
+            } else {
+                alert(result.error || 'Неуспешно добавяне на запис.');
+            }
+        } catch (error) {
+            logError('Add entry failed', error);
+            alert('Възникна грешка при добавяне на запис.');
+        }
+    });
+}
 
 async function deleteEntry(entryId) {
     if (!confirm('Сигурни ли сте, че искате да изтриете този запис?')) {
@@ -242,19 +263,22 @@ async function deleteEntry(entryId) {
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById(`entry-${entryId}`).remove();
-            alert('Записът е изтрит успешно!');
+            const entryEl = document.getElementById(`entry-${entryId}`);
+            if (entryEl) {
+                entryEl.remove();
+            }
+            alert('Записът е изтрит успешно.');
 
             const entriesList = document.querySelector('.entries-list');
-            if (entriesList.children.length === 0) {
+            if (entriesList && entriesList.children.length === 0) {
                 entriesList.innerHTML = '<p class="no-entries">Няма записи.</p>';
             }
         } else {
-            alert('Неуспешно изтриване на запис');
+            alert(result.error || 'Неуспешно изтриване на запис.');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при изтриване на запис');
+        logError('Delete entry failed', error);
+        alert('Възникна грешка при изтриване на запис.');
     }
 }
 
@@ -276,26 +300,25 @@ function editEntry(entryId) {
                 document.getElementById('edit-pdf_label').value = '';
 
                 const pdfInfo = document.getElementById('current-pdf-info');
-                const pdfFiles = Array.isArray(entry.pdf_files) ? entry.pdf_files : (entry.pdf_file ? [entry.pdf_file] : []);
+                const pdfFiles = Array.isArray(entry.pdf_files) ? entry.pdf_files : [];
                 if (pdfFiles.length > 0) {
                     const displayNames = pdfFiles.map(item => {
                         if (typeof item === 'string') {
                             return item;
                         }
-                        const label = item.label ? `${item.label} (${item.filename})` : item.filename;
-                        return label;
+                        return item.name || item.filename || item.url || 'PDF';
                     });
                     pdfInfo.textContent = `Текущи PDF файлове: ${displayNames.join(', ')}`;
                 } else {
-                    pdfInfo.textContent = 'Няма прикачен PDF';
+                    pdfInfo.textContent = 'Няма прикачени PDF файлове.';
                 }
 
                 document.getElementById('edit-modal').style.display = 'block';
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Неуспешно зареждане на запис');
+            logError('Load entry failed', error);
+            alert('Неуспешно зареждане на запис.');
         });
 }
 
@@ -318,58 +341,61 @@ async function removeAllPdfs() {
         const result = await response.json();
         if (result.success) {
             const pdfInfo = document.getElementById('current-pdf-info');
-            pdfInfo.textContent = 'Няма прикачен PDF';
+            pdfInfo.textContent = 'Няма прикачени PDF файлове.';
             document.getElementById('edit-pdf_files').value = '';
             alert('Всички PDF файлове са изтрити.');
         } else {
-            alert('Неуспешно изтриване на PDF файлове');
+            alert(result.error || 'Неуспешно изтриване на PDF файлове.');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при изтриване на PDF файлове');
+        logError('Delete PDFs failed', error);
+        alert('Възникна грешка при изтриване на PDF файлове.');
     }
 }
 
-document.getElementById('edit-entry-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+const editForm = document.getElementById('edit-entry-form');
+if (editForm) {
+    editForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-    const entryId = document.getElementById('edit-id').value;
-    const formData = new FormData();
-    formData.append('heading', document.getElementById('edit-heading').value);
-    formData.append('aop_number', document.getElementById('edit-aop_number').value);
-    formData.append('publish_date', document.getElementById('edit-publish_date').value);
-    formData.append('title', document.getElementById('edit-title').value);
-    formData.append('content', document.getElementById('edit-content').value);
-    formData.append('page_id', document.getElementById('edit-page_id').value);
-    formData.append('pdf_label', document.getElementById('edit-pdf_label').value);
+        const entryId = document.getElementById('edit-id').value;
+        const formData = new FormData();
+        formData.append('heading', document.getElementById('edit-heading').value);
+        formData.append('aop_number', document.getElementById('edit-aop_number').value);
+        formData.append('publish_date', document.getElementById('edit-publish_date').value);
+        formData.append('title', document.getElementById('edit-title').value);
+        formData.append('content', document.getElementById('edit-content').value);
+        formData.append('page_id', document.getElementById('edit-page_id').value);
+        formData.append('pdf_label', document.getElementById('edit-pdf_label').value);
 
-    const fileInput = document.getElementById('edit-pdf_files');
-    if (fileInput.files.length > 0) {
-        Array.from(fileInput.files).forEach(file => {
-            formData.append('pdf_files', file);
-        });
-    }
-
-    try {
-        const response = await fetch(`/api/entries/${entryId}`, {
-            method: 'PUT',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            alert('Записът е обновен успешно!');
-            closeEditModal();
-            location.reload();
-        } else {
-            alert('Неуспешно обновяване на запис');
+        const fileInput = document.getElementById('edit-pdf_files');
+        if (fileInput.files.length > 0) {
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('pdf_files', file);
+            });
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при обновяване на запис');
-    }
-});
+
+        try {
+            const response = await fetch(`/api/entries/${entryId}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Записът е обновен успешно.');
+                closeEditModal();
+                location.reload();
+            } else {
+                alert(result.error || 'Неуспешно обновяване на запис.');
+            }
+        } catch (error) {
+            logError('Update entry failed', error);
+            alert('Възникна грешка при обновяване на запис.');
+        }
+    });
+}
 
 window.onclick = function(event) {
     const editModal = document.getElementById('edit-modal');
@@ -380,7 +406,7 @@ window.onclick = function(event) {
     if (event.target == pageModal) {
         closePageModal();
     }
-}
+};
 
 function showAddPageModal() {
     document.getElementById('page-modal-title').textContent = 'Нова страница';
@@ -413,50 +439,53 @@ async function deletePage(pageId) {
         const result = await response.json();
 
         if (result.success) {
-            alert('Страницата е изтрита успешно!');
+            alert('Страницата е изтрита успешно.');
             location.reload();
         } else {
-            alert(result.error || 'Неуспешно изтриване на страница');
+            alert(result.error || 'Неуспешно изтриване на страница.');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при изтриване на страница');
+        logError('Delete page failed', error);
+        alert('Възникна грешка при изтриване на страница.');
     }
 }
 
-document.getElementById('page-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+const pageForm = document.getElementById('page-form');
+if (pageForm) {
+    pageForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-    const pageId = document.getElementById('page-id').value;
-    const pageName = document.getElementById('page-name').value;
+        const pageId = document.getElementById('page-id').value;
+        const pageName = document.getElementById('page-name').value;
 
-    const isEdit = pageId !== '';
-    const url = isEdit ? `/api/pages/${pageId}` : '/api/pages';
-    const method = isEdit ? 'PUT' : 'POST';
+        const isEdit = pageId !== '';
+        const url = isEdit ? `/api/pages/${pageId}` : '/api/pages';
+        const method = isEdit ? 'PUT' : 'POST';
 
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name: pageName })
-        });
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: pageName })
+            });
 
-        const result = await response.json();
+            const result = await response.json();
 
-        if (result.success) {
-            alert(isEdit ? 'Страницата е преименувана успешно!' : 'Страницата е добавена успешно!');
-            closePageModal();
-            location.reload();
-        } else {
-            alert('Неуспешно запазване на страница');
+            if (result.success) {
+                alert(isEdit ? 'Страницата е преименувана успешно.' : 'Страницата е добавена успешно.');
+                closePageModal();
+                location.reload();
+            } else {
+                alert(result.error || 'Неуспешно запазване на страница.');
+            }
+        } catch (error) {
+            logError('Save page failed', error);
+            alert('Възникна грешка при запазване на страница.');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Възникна грешка при запазване на страница');
-    }
-});
+    });
+}
 
 function filterEntries() {
     const selectedPage = document.getElementById('filter-page').value;
@@ -474,5 +503,4 @@ function filterEntries() {
             }
         }
     });
-}
-
+}

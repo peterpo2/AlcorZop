@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
@@ -14,13 +14,13 @@
         <header class="site-header">
             <div class="header-inner">
                 <div class="brand">
-                                        <div class="brand-text">
+                    <div class="brand-text">
                         <h1>Админ панел</h1>
                     </div>
                 </div>
                 <nav class="header-actions">
                     <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn">Начало</button>
-                    <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn active">Изход</button>
+                    <button onclick="location.href='{{ url_for('logout') }}'" class="nav-btn">Изход</button>
                 </nav>
             </div>
         </header>
@@ -38,8 +38,8 @@
                             <input type="text" id="profile-title" name="profile_title" value="{{ profile.title }}" required>
                         </div>
                         <div class="form-group">
-                        <label for="profile-body">Съдържание</label>
-                        <textarea id="profile-body" name="profile_body" rows="10" required>{{ profile.body }}</textarea>
+                            <label for="profile-body">Съдържание</label>
+                            <textarea id="profile-body" name="profile_body" rows="10" required>{{ profile.body }}</textarea>
                         </div>
                         <div class="form-group">
                             <label for="profile-pdf-label">Име на файла (PDF)</label>
@@ -119,40 +119,40 @@
                                 {% endfor %}
                             </select>
                         </div>
-                <div class="form-group">
-                    <label for="heading">Заглавие на панела</label>
-                    <input type="text" id="heading" name="heading" required>
-                </div>
-                <div class="form-group">
-                    <label for="aop_number">Номер от АОП</label>
-                    <input type="text" id="aop_number" name="aop_number">
-                </div>
-                <div class="form-group">
-                    <label for="publish_date">Въведете дата</label>
-                    <div class="date-field">
-                        <input type="date" id="publish_date" name="publish_date" class="date-input" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="title">Подзаглавие</label>
-                    <input type="text" id="title" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="content">Съдържание</label>
-                    <textarea id="content" name="content" rows="5" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="pdf_label">Име на файл (PDF)</label>
-                    <input type="text" id="pdf_label" name="pdf_label" placeholder="Напр. Процедура 23">
-                    <small class="form-help">Това име ще се показва като текст на линка.</small>
-                </div>
-                <div class="form-group">
-                    <label for="pdf_files">Прикачи PDF (по избор)</label>
-                    <input type="file" id="pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help">Максимален размер: 32MB</small>
-                </div>
-                    <button type="submit" class="btn btn-primary">Добави</button>
-                </form>
+                        <div class="form-group">
+                            <label for="heading">Заглавие на панела</label>
+                            <input type="text" id="heading" name="heading" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="aop_number">Номер от АОП</label>
+                            <input type="text" id="aop_number" name="aop_number">
+                        </div>
+                        <div class="form-group">
+                            <label for="publish_date">Въведете дата</label>
+                            <div class="date-field">
+                                <input type="date" id="publish_date" name="publish_date" class="date-input" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Подзаглавие</label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">Съдържание</label>
+                            <textarea id="content" name="content" rows="5" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="pdf_label">Име на файл (PDF)</label>
+                            <input type="text" id="pdf_label" name="pdf_label" placeholder="Напр. Процедура 23">
+                            <small class="form-help">Това име ще се показва като текст на линка.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="pdf_files">Прикачи PDF (по избор)</label>
+                            <input type="file" id="pdf_files" name="pdf_files" accept=".pdf" multiple>
+                            <small class="form-help">Максимален размер: 32MB</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добави</button>
+                    </form>
                 </div>
             </div>
 
@@ -181,26 +181,31 @@
                                 </span>
                                 <h4>{{ entry.heading }}</h4>
                                 <p><strong>{{ entry.title }}</strong></p>
-                            {% if entry.publish_date %}
-                            <p class="entry-preview">Началната дата: {{ entry.publish_date }}</p>
-                            {% elif entry.heading %}
-                            <p class="entry-preview">{{ entry.heading }}</p>
-                            {% elif entry.content %}
-                            <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
-                            {% endif %}
-                            {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
-                            {% if pdf_files %}
-                            <div class="pdf-indicator">
-                                PDF:
-                                {% for pdf_name in pdf_files %}
-                                {% if pdf_name is mapping %}
-                                <a href="{{ url_for('pdf_viewer', filename=pdf_name.filename) }}" target="_blank" rel="noopener">{{ pdf_name.label or pdf_name.filename }}</a>{% if not loop.last %}, {% endif %}
-                                {% else %}
-                                <a href="{{ url_for('pdf_viewer', filename=pdf_name) }}" target="_blank" rel="noopener">{{ pdf_name }}</a>{% if not loop.last %}, {% endif %}
+                                {% if entry.publish_date %}
+                                <p class="entry-preview">Началната дата: {{ entry.publish_date }}</p>
+                                {% elif entry.heading %}
+                                <p class="entry-preview">{{ entry.heading }}</p>
+                                {% elif entry.content %}
+                                <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
                                 {% endif %}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
+                                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
+                                {% if pdf_files %}
+                                <div class="pdf-indicator">
+                                    PDF:
+                                    {% for pdf in pdf_files %}
+                                        {% if pdf is mapping %}
+                                            {% set link = pdf.url or (url_for('pdf_viewer', filename=pdf.filename) if pdf.filename else '') %}
+                                            {% if link %}
+                                                <a href="{{ link }}" target="_blank" rel="noopener">{{ pdf.name or pdf.filename or link }}</a>{% if not loop.last %}, {% endif %}
+                                            {% else %}
+                                                {{ pdf.name or pdf.filename }}{% if not loop.last %}, {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{{ url_for('pdf_viewer', filename=pdf) }}" target="_blank" rel="noopener">{{ pdf }}</a>{% if not loop.last %}, {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
                                 <small>{{ entry.date }}</small>
                             </div>
                             <div class="entry-actions">
@@ -262,8 +267,8 @@
                 <div class="form-group">
                     <label for="edit-pdf_files">Добавяне на PDF (по избор)</label>
                     <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help" id="current-pdf-info">дд.ММ.гггг: 32MB, до 5 PDF</small>
-                <button type="button" onclick="removeAllPdfs()" class="btn btn-delete">Изтрий всички PDF</button>
+                    <small class="form-help" id="current-pdf-info">Макс 32MB, до 5 PDF файла.</small>
+                    <button type="button" onclick="removeAllPdfs()" class="btn btn-delete">Изтрий всички PDF</button>
                 </div>
                 <button type="submit" class="btn btn-primary">Обнови</button>
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Откажи</button>
@@ -289,4 +294,4 @@
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
-</html>
+</html>

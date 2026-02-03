@@ -1,4 +1,7 @@
 ﻿// Function to toggle panel collapse/expand
+const log = (...args) => console.log('[main]', ...args);
+const logError = (...args) => console.error('[main]', ...args);
+
 let openedAll = false;
 
 function getCollapsibleBodies() {
@@ -65,6 +68,7 @@ function toggleAllPanels() {
 document.addEventListener('DOMContentLoaded', function() {
     setAllPanels(false);
     syncToggleAllState();
+    log('Main UI ready');
 });
 
 let searchTimeout = null;
@@ -91,7 +95,7 @@ async function searchEntries(query) {
             const entries = await response.json();
             renderEntries(entries);
         } catch (err) {
-            console.error('Search failed', err);
+            logError('Search failed', err);
         }
     }, 300);
 }
