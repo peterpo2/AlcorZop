@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entries Panel System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Профил на куповача</h1>
+        </header>
+
+        <!-- Page Navigation -->
+        <div class="page-navigation">
+            {% for page in pages %}
+            <button onclick="location.href='{{ url_for('index', page=page.id) }}'"
+                    class="page-btn {% if page.id == current_page %}active{% endif %}">
+                {{ page.name }}
+            </button>
+            {% endfor %}
+        </div>
+    <div class="search-container">
+    <input
+        type="text"
+        id="search-input"
+        placeholder="Search this page..."
+        oninput="searchEntries(this.value)"
+    >
+    </div>
+        <main>
+            <div class="panels-container">
+                {% if entries %}
+                    {% for entry in entries %}
+                    <div class="panel">
+                        <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
+                            <h3 class="panel-title">{{ entry.heading }}</h3>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="panel-body" id="panel-{{ entry.id }}">
+                            <div class="panel-content">
+                                <h4>{{ entry.title }}</h4>
+                                <p>{{ entry.content }}</p>
+                                
+                                {% if entry.pdf_file %}
+                                <div class="pdf-attachment">
+                                    <a href="{{ url_for('uploaded_file', filename=entry.pdf_file) }}" 
+                                       target="_blank" 
+                                       class="pdf-link">
+                                        📄 View PDF Document
+                                    </a>
+                                </div>
+                                {% endif %}
+                                
+                                <small class="entry-date">Posted: {{ entry.date }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-entries">
+                        <p>No entries available on this page. Go to <a href="{{ url_for('admin') }}">Admin</a> to add entries.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,107 +1,103 @@
-# Document Portal (Next.js + Postgres)
+# Panel Entry Management System
 
-Document portal with a custom admin area (Next.js App Router), Prisma + Postgres, and PDF uploads stored on the VPS filesystem.
+A Flask web application for managing collapsible panel entries with PDF attachments and multi-page organization.
 
-## Prerequisites
+## Features
 
-- Docker + Docker Compose
-- Node.js 20+ (only if running services outside Docker)
+- **Dynamic Panel System**: Display entries in collapsible panels
+- **Multi-Page Organization**: Create and manage multiple pages with custom names
+- **PDF Attachments**: Attach PDF files to any entry
+- **Admin Interface**: Add, edit, and delete entries and pages
+- **Responsive Design**: Works on desktop and mobile devices
+- **Data Persistence**: Entries are stored in JSON files
 
-## Repo layout
+## Installation
 
-- `docker-compose.yml`
-- `apps/web` (Next.js App Router + Admin UI)
-- `data` (local dev volumes only)
-
-## Quick start (Docker)
-
-1. Copy env examples and update secrets:
-   - `cp .env.example .env`
-   - `cp apps/web/.env.example apps/web/.env`
-
-2. Start everything:
-
+1. Install Python dependencies:
 ```bash
-docker compose up -d --build
+pip install -r requirements.txt
 ```
 
-3. Run Prisma migrations + seed (first time only):
+## Running the Application
 
+1. Start the Flask server:
 ```bash
-docker compose exec web npx prisma migrate deploy
-docker compose exec web npx prisma db seed
+python app.py
 ```
 
-4. Access services:
-   - Web: `http://localhost:3000`
-   - Admin (default): `http://localhost:3000/admin` or `ADMIN_PATH` if set
+2. Open your browser and navigate to:
+   - Home page: http://localhost:5000
+   - Admin page: http://localhost:5000/admin
 
-## Environment variables
+## Usage
 
-These are the primary environment variables required to run the project:
+### Viewing Entries (Home Page)
+- Use the **page navigation buttons** at the top to switch between pages
+- Click on any panel heading to collapse/expand the panel
+- Click on PDF links to view attached documents
+- All panels start expanded by default
 
-- `DATABASE_URL`
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
-- `ADMIN_PATH`
-- `UPLOAD_DIR`
-- `MAX_UPLOAD_MB`
+### Managing Pages (Admin Page)
+- **Rename Page**: Click "Rename" next to any page
+- **Add New Page**: Click "Add New Page" button
+- **Delete Page**: Click "Delete" (only works if page has no entries)
 
-Additional recommended variables:
+### Managing Entries (Admin Page)
+- **Add Entry**: 
+  - Select which page to add the entry to
+  - Fill in the form with heading, title, and content
+  - Optionally attach a PDF file (max 16MB)
+  - Click "Add Entry"
+- **Edit Entry**: Click the "Edit" button on any entry to modify it
+- **Delete Entry**: Click the "Delete" button to remove an entry (confirmation required)
+- **Filter Entries**: Use the dropdown to view entries from specific pages
 
-- `SESSION_TTL_DAYS` (defaults to 7)
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
+## File Structure
 
-## Admin portal
-
-- All admin routes live under `ADMIN_PATH` (defaults to `/admin`).
-- To generate a stable randomized admin path, set `ADMIN_PATH=random` and set `ADMIN_PATH_SEED` to a random value.
-- The admin portal is protected by password hashing + DB-backed sessions stored as hashed tokens.
-- Login is rate-limited in-memory for development. For production, place the app behind a reverse proxy and enable a shared rate limiter.
-
-## Content model
-
-- Page -> Topic -> Subtopic -> Document (PDF)
-- Documents store metadata in Postgres and files on disk in `UPLOAD_DIR`.
-
-## Public site
-
-- Home lists Pages ordered by `order`.
-- `/p/[pageSlug]` shows Topics/Subtopics with expandable sections.
-- `/doc/[docSlug]` shows a dedicated document page and streams PDFs from disk.
-- `/search` searches across page/topic/subtopic/document titles.
-
-## Docker notes
-
-### Volumes
-
-- Postgres data: `./data/postgres` -> `/var/lib/postgresql/data`
-- Uploads: `./data/uploads` -> `/data/uploads`
-
-### One-time migration step
-
-By default, the Docker container runs `prisma migrate deploy` on start. For local development you can also run:
-
-```bash
-docker compose exec web npx prisma migrate deploy
+```
+panel_system/
+│
+├── app.py                      # Main Flask application (backend)
+├── requirements.txt            # Python dependencies
+├── entries.json               # Entry data storage
+├── pages.json                 # Page configuration storage
+├── uploads/                   # PDF file storage directory
+├── run.sh                     # Quick start script
+├── README.md                  # Documentation
+│
+├── templates/                 # HTML templates
+│   ├── index.html            # Home page with panels
+│   └── admin.html            # Admin management page
+│
+└── static/                    # Static assets
+    ├── css/
+    │   └── style.css         # All styling
+    └── js/
+        ├── main.js           # Panel toggle functionality
+        └── admin.js          # Admin page functionality
 ```
 
-### Commands
+## API Endpoints
 
-```bash
-docker compose up -d --build
-docker compose down -v
-```
+**Entries:**
+- `GET /api/entries` - Get all entries
+- `POST /api/entries` - Add a new entry (with optional PDF)
+- `PUT /api/entries/<id>` - Update an entry
+- `DELETE /api/entries/<id>` - Delete an entry
 
-## Local development (optional)
+**Pages:**
+- `GET /api/pages` - Get all pages
+- `POST /api/pages` - Add a new page
+- `PUT /api/pages/<id>` - Rename a page
+- `DELETE /api/pages/<id>` - Delete a page (if empty)
 
-```bash
-cd apps/web
-npm install
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
-npm run dev
-```
+**Files:**
+- `GET /uploads/<filename>` - Serve uploaded PDF files
+
+## Panel Structure
+
+Each panel contains:
+- **Panel Heading**: The main title shown in the collapsed state
+- **Panel Title**: Secondary title inside the expanded panel
+- **Content**: The main text content
+- **Date**: Automatically generated timestamp

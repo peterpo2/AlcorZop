@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Manage Entries</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Admin Panel</h1>
+            <nav>
+                <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn">Home</button>
+                <button onclick="location.href='{{ url_for('admin') }}'" class="nav-btn active">Admin</button>
+            </nav>
+        </header>
+
+        <main>
+            <div class="admin-section">
+                <h2>Add New Entry</h2>
+                <form id="add-entry-form">
+                    <div class="form-group">
+                        <label for="heading">Panel Heading:</label>
+                        <input type="text" id="heading" name="heading" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Panel Title:</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content:</label>
+                        <textarea id="content" name="content" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Entry</button>
+                </form>
+            </div>
+
+            <div class="admin-section">
+                <h2>Manage Existing Entries</h2>
+                <div class="entries-list">
+                    {% if entries %}
+                        {% for entry in entries %}
+                        <div class="entry-item" id="entry-{{ entry.id }}">
+                            <div class="entry-info">
+                                <h4>{{ entry.heading }}</h4>
+                                <p><strong>{{ entry.title }}</strong></p>
+                                <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
+                                <small>{{ entry.date }}</small>
+                            </div>
+                            <div class="entry-actions">
+                                <button onclick="editEntry({{ entry.id }})" class="btn btn-edit">Edit</button>
+                                <button onclick="deleteEntry({{ entry.id }})" class="btn btn-delete">Delete</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-entries">No entries available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Entry</h2>
+            <form id="edit-entry-form">
+                <input type="hidden" id="edit-id" name="id">
+                <div class="form-group">
+                    <label for="edit-heading">Panel Heading:</label>
+                    <input type="text" id="edit-heading" name="heading" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-title">Panel Title:</label>
+                    <input type="text" id="edit-title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-content">Content:</label>
+                    <textarea id="edit-content" name="content" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Entry</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

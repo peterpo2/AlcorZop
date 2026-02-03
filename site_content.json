@@ -1,0 +1,10 @@
+{
+  "landing": {
+    "title": "Welcome",
+    "content": "This is the landing page content."
+  },
+  "terms": {
+    "title": "General Terms and Conditions",
+    "content": "Put your terms and conditions here..."
+  }
+}

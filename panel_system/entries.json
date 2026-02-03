@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "Welcome to the Panel System",
+    "heading": "Introduction",
+    "content": "This is a demonstration of the collapsible panel entry system. Click on any panel heading to expand or collapse the content. You can add, edit, and delete entries from the Admin page.",
+    "date": "2024-02-02 10:00:00"
+  },
+  {
+    "id": 2,
+    "title": "Sample Entry - Meeting Minutes",
+    "heading": "Meeting Notes - January 2024",
+    "content": "This panel demonstrates how meeting minutes or announcements can be displayed. The content can be as long as needed and will be displayed in a clean, organized format within the collapsible panel.",
+    "date": "2024-02-01 14:30:00"
+  },
+  {
+    "id": 3,
+    "title": "Important Announcement",
+    "heading": "System Update Notice",
+    "content": "This is an example of how important announcements can be posted. Users can click on the panel heading to view the full details of the announcement.",
+    "date": "2024-01-31 09:15:00"
+  }
+]

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ landing.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <h1>{{ landing.title }}</h1>
+        <nav>
+            {% for page in pages %}
+            <button onclick="location.href='/page/{{ page.id }}'">
+                {{ page.name }}
+            </button>
+            {% endfor %}
+        </nav>
+    </header>
+
+    <main>
+        <section class="landing-content">
+            {{ landing.content | safe }}
+        </section>
+
+        <hr>
+
+        <section class="terms">
+            <h2>{{ terms.title }}</h2>
+            <div class="terms-content">
+                {{ terms.content | safe }}
+            </div>
+        </section>
+    </main>
+
+</div>
+</body>
+</html>
