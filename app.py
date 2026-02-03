@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Store PDFs in the Uploads folder (case-insensitive on Windows).
+# Store PDFs in the Uploads folder (case-sensitive on Linux/Docker).
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'Uploads')
 
 # Allowed file extensions
@@ -21,9 +21,17 @@ MAX_PDF_FILES = 5
 DATA_FILE = 'entries.json'
 PAGES_FILE = 'pages.json'
 
-# Create uploads directory if it doesn't exist
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+# Create uploads directory if it doesn't exist (and migrate legacy folder if present)
+legacy_uploads = os.path.join(BASE_DIR, 'uploads')
+if os.path.isdir(legacy_uploads) and not os.path.isdir(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    for name in os.listdir(legacy_uploads):
+        src = os.path.join(legacy_uploads, name)
+        dst = os.path.join(app.config['UPLOAD_FOLDER'], name)
+        if os.path.isfile(src) and not os.path.exists(dst):
+            os.replace(src, dst)
+else:
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -224,7 +232,13 @@ def update_entry(entry_id):
         # Handle file upload
         pdf_filenames = []
         files = request.files.getlist('pdf_files')
-        if len([f for f in files if f and f.filename]) > MAX_PDF_FILES:
+        existing_count = 0
+        for entry in entries:
+            if entry['id'] == entry_id:
+                existing_count = len(entry.get('pdf_files', []))
+                break
+        incoming_count = len([f for f in files if f and f.filename])
+        if existing_count + incoming_count > MAX_PDF_FILES:
             return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
         for file in files:
             if not file or file.filename == '':
@@ -241,12 +255,6 @@ def update_entry(entry_id):
     for entry in entries:
         if entry['id'] == entry_id:
             # Delete old PDF if new one is uploaded
-            if pdf_filenames:
-                for old_name in entry.get('pdf_files', []):
-                    old_pdf = os.path.join(app.config['UPLOAD_FOLDER'], old_name)
-                    if os.path.exists(old_pdf):
-                        os.remove(old_pdf)
-            
             entry['title'] = title
             entry['heading'] = heading
             entry['aop_number'] = aop_number
@@ -254,9 +262,24 @@ def update_entry(entry_id):
             entry['content'] = content
             entry['page_id'] = page_id
             if pdf_filenames:
-                entry['pdf_files'] = pdf_filenames
+                entry['pdf_files'] = entry.get('pdf_files', []) + pdf_filenames
             break
     
+    save_entries(entries)
+    return jsonify({'success': True})
+
+@app.route('/api/entries/<int:entry_id>/pdfs', methods=['DELETE'])
+def delete_entry_pdfs(entry_id):
+    """Remove all PDFs for a given entry"""
+    entries = load_entries()
+    for entry in entries:
+        if entry['id'] == entry_id:
+            for pdf_name in entry.get('pdf_files', []):
+                pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+            entry['pdf_files'] = []
+            break
     save_entries(entries)
     return jsonify({'success': True})
 
@@ -264,6 +287,16 @@ def update_entry(entry_id):
 def uploaded_file(filename):
     """Serve uploaded PDF files"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/pdf/<filename>')
+def pdf_viewer(filename):
+    """Render a viewer page for a PDF file"""
+    if not allowed_file(filename):
+        return redirect(url_for('index'))
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.isfile(pdf_path):
+        return redirect(url_for('index'))
+    return render_template('pdf_viewer.html', filename=filename)
 
 @app.route('/api/pages', methods=['GET'])
 def get_pages():

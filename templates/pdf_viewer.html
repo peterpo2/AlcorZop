@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF преглед</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .pdf-frame {
+        width: 100%;
+        height: calc(100vh - 120px);
+        border: 0;
+        background: #fff;
+      }
+      .viewer-shell {
+        padding: 20px 24px 30px;
+      }
+      .viewer-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="site-header">
+        <div class="header-inner">
+          <div class="brand">
+            <div class="brand-text">
+              <h1>
+                <a href="{{ url_for('index') }}">Обратно към списъка</a>
+              </h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="viewer-shell">
+        <div class="viewer-actions">
+          <a
+            class="btn btn-secondary"
+            href="{{ url_for('uploaded_file', filename=filename) }}"
+            target="_blank"
+            rel="noopener"
+          >
+            Отвори в нов прозорец
+          </a>
+        </div>
+        <iframe
+          class="pdf-frame"
+          src="{{ url_for('uploaded_file', filename=filename) }}"
+          title="PDF документ"
+        ></iframe>
+      </main>
+    </div>
+  </body>
+</html>

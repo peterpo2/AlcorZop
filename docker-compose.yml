@@ -4,7 +4,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./uploads:/app/uploads
+      - ./Uploads:/app/Uploads
       - ./entries.json:/app/entries.json
       - ./pages.json:/app/pages.json
       - ./cred.json:/app/cred.json

@@ -20,7 +20,7 @@
                 </div>
                 <nav class="header-actions">
                     <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn">Начало</button>
-                    <button onclick="location.href='{{ url_for('logout') }}'" class="nav-btn active">Изход</button>
+                    <button onclick="location.href='{{ url_for('index') }}'" class="nav-btn active">Изход</button>
                 </nav>
             </div>
         </header>
@@ -80,7 +80,7 @@
                 <div class="form-group">
                     <label for="pdf_files">Прикачи PDF (по избор)</label>
                     <input type="file" id="pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help">Максимален размер: 16MB</small>
+                    <small class="form-help">Максимален размер: 32MB</small>
                 </div>
                     <button type="submit" class="btn btn-primary">Добави</button>
                 </form>
@@ -117,7 +117,7 @@
                             <div class="pdf-indicator">
                                 PDF:
                                 {% for pdf_name in pdf_files %}
-                                <a href="{{ url_for('uploaded_file', filename=pdf_name) }}" target="_blank" rel="noopener">{{ pdf_name }}</a>{% if not loop.last %}, {% endif %}
+                                <a href="{{ url_for('pdf_viewer', filename=pdf_name) }}" target="_blank" rel="noopener">{{ pdf_name }}</a>{% if not loop.last %}, {% endif %}
                                 {% endfor %}
                             </div>
                             {% endif %}
@@ -175,9 +175,10 @@
                     <textarea id="edit-content" name="content" rows="5" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="edit-pdf_files">Смяна на PDF (по избор)</label>
+                    <label for="edit-pdf_files">Добавяне на PDF (по избор)</label>
                     <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help" id="current-pdf-info">??дд.ММ.гггг??: 32MB, ?? 5 PDF</small>
+                    <small class="form-help" id="current-pdf-info">дд.ММ.гггг: 32MB, до 5 PDF</small>
+                <button type="button" onclick="removeAllPdfs()" class="btn btn-delete">Изтрий всички PDF</button>
                 </div>
                 <button type="submit" class="btn btn-primary">Обнови</button>
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Откажи</button>

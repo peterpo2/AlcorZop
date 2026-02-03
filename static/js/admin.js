@@ -126,6 +126,33 @@ function closeEditModal() {
     document.getElementById('edit-modal').style.display = 'none';
 }
 
+async function removeAllPdfs() {
+    const entryId = document.getElementById('edit-id').value;
+    if (!entryId) {
+        return;
+    }
+    if (!confirm('Сигурни ли сте, че искате да изтриете всички PDF файлове?')) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/entries/${entryId}/pdfs`, {
+            method: 'DELETE'
+        });
+        const result = await response.json();
+        if (result.success) {
+            const pdfInfo = document.getElementById('current-pdf-info');
+            pdfInfo.textContent = 'Няма прикачен PDF';
+            document.getElementById('edit-pdf_files').value = '';
+            alert('Всички PDF файлове са изтрити.');
+        } else {
+            alert('Неуспешно изтриване на PDF файлове');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Възникна грешка при изтриване на PDF файлове');
+    }
+}
+
 document.getElementById('edit-entry-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
