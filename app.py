@@ -32,7 +32,12 @@ def load_entries():
     """Load entries from JSON file"""
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            entries = json.load(f)
+            for entry in entries:
+                if 'pdf_files' not in entry:
+                    legacy = entry.pop('pdf_file', None)
+                    entry['pdf_files'] = [legacy] if legacy else []
+            return entries
     return []
 
 def save_entries(entries):
@@ -125,47 +130,35 @@ def add_entry():
     # Handle multipart form data
     title = request.form.get('title', '')
     heading = request.form.get('heading', '')
+    aop_number = request.form.get('aop_number', '')
+    publish_date = request.form.get('publish_date', '')
     content = request.form.get('content', '')
     page_id = int(request.form.get('page_id', 1))
     
     # Handle file upload
-    pdf_filename = None
-    #if 'pdf_file' in request.files:
-    #    file = request.files['pdf_file']
-    #    if file and file.filename and allowed_file(file.filename):
-    #        filename = secure_filename(file.filename)
-    #        # Add timestamp to filename to avoid conflicts
-    #        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    #       pdf_filename = f"{timestamp}_{filename}"
-    #        file.save(os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename))
-    if 'pdf_file' not in request.files:
-        print("NO pdf_file in request.files")
-    else:
-        file = request.files['pdf_file']
-        print("Uploaded filename:", file.filename)
-
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-
+    pdf_filenames = []
+    files = request.files.getlist('pdf_files')
+    for file in files:
+        if not file or file.filename == '':
+            continue
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file type'}), 400
-
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         pdf_filename = f"{timestamp}_{filename}"
-
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-        print("Saving to:", save_path)
-
         file.save(save_path)
+        pdf_filenames.append(pdf_filename)
 
     new_entry = {
         'id': max([e['id'] for e in entries], default=0) + 1,
         'title': title,
         'heading': heading,
+        'aop_number': aop_number,
+        'publish_date': publish_date,
         'content': content,
         'page_id': page_id,
-        'pdf_file': pdf_filename,
+        'pdf_files': pdf_filenames,
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
@@ -181,10 +174,11 @@ def delete_entry(entry_id):
     
     # Find and delete associated PDF file
     for entry in entries:
-        if entry['id'] == entry_id and entry.get('pdf_file'):
-            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], entry['pdf_file'])
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
+        if entry['id'] == entry_id and entry.get('pdf_files'):
+            for pdf_name in entry.get('pdf_files', []):
+                pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
             break
     
     entries = [e for e in entries if e['id'] != entry_id]
@@ -202,42 +196,51 @@ def update_entry(entry_id):
         data = request.json
         title = data.get('title', '')
         heading = data.get('heading', '')
+        aop_number = data.get('aop_number', '')
+        publish_date = data.get('publish_date', '')
         content = data.get('content', '')
         page_id = data.get('page_id', 1)
-        pdf_filename = None
+        pdf_filenames = None
     else:
         title = request.form.get('title', '')
         heading = request.form.get('heading', '')
+        aop_number = request.form.get('aop_number', '')
+        publish_date = request.form.get('publish_date', '')
         content = request.form.get('content', '')
         page_id = int(request.form.get('page_id', 1))
         
         # Handle file upload
-        pdf_filename = None
-        if 'pdf_file' not in request.files:
-            return jsonify({'success': False, 'error': 'No file part'}), 400
-
-        file = request.files['pdf_file']
-
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-
-        if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'Only PDF files allowed'}), 400
+        pdf_filenames = []
+        files = request.files.getlist('pdf_files')
+        for file in files:
+            if not file or file.filename == '':
+                continue
+            if not allowed_file(file.filename):
+                return jsonify({'success': False, 'error': 'Only PDF files allowed'}), 400
+            filename = secure_filename(file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            pdf_filename = f"{timestamp}_{filename}"
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+            file.save(save_path)
+            pdf_filenames.append(pdf_filename)
     
     for entry in entries:
         if entry['id'] == entry_id:
             # Delete old PDF if new one is uploaded
-            if pdf_filename and entry.get('pdf_file'):
-                old_pdf = os.path.join(app.config['UPLOAD_FOLDER'], entry['pdf_file'])
-                if os.path.exists(old_pdf):
-                    os.remove(old_pdf)
+            if pdf_filenames:
+                for old_name in entry.get('pdf_files', []):
+                    old_pdf = os.path.join(app.config['UPLOAD_FOLDER'], old_name)
+                    if os.path.exists(old_pdf):
+                        os.remove(old_pdf)
             
             entry['title'] = title
             entry['heading'] = heading
+            entry['aop_number'] = aop_number
+            entry['publish_date'] = publish_date
             entry['content'] = content
             entry['page_id'] = page_id
-            if pdf_filename:
-                entry['pdf_file'] = pdf_filename
+            if pdf_filenames:
+                entry['pdf_files'] = pdf_filenames
             break
     
     save_entries(entries)
@@ -295,7 +298,7 @@ def search_entries():
         if page_id and str(e['page_id']) != page_id:
             continue
 
-        haystack = f"{e['title']} {e['heading']} {e['content']}".lower()
+        haystack = f"{e.get('title','')} {e.get('heading','')} {e.get('aop_number','')} {e.get('publish_date','')} {e.get('content','')}".lower()
 
         if query in haystack:
             results.append(e)

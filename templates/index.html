@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>МБАЛ „Рахила Ангелова“ – гр.Перник</title>
+    <title>МБАЛ „Рахила Ангелова“ – гр. Перник</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -21,7 +21,7 @@
         <div class="header-inner">
           <div class="brand">
             <div class="brand-text">
-              <h1>МБАЛ „Рахила Ангелова“ – гр.Перник</h1>
+              <h1>МБАЛ „Рахила Ангелова“ – гр. Перник</h1>
             </div>
           </div>
         </div>
@@ -48,6 +48,13 @@
               oninput="searchEntries(this.value)"
             />
             <span class="search-hint">Общи условия</span>
+            <a
+              href="{{ url_for('uploaded_file', filename='обществени-поръчки.pdf') }}"
+              class="pdf-link"
+              style="text-decoration: underline; margin-top: 6px;"
+            >
+              ВЪТРЕШНИ ПРАВИЛА ЗА ВЪЗЛАГАНЕ НА ОБЩЕСТВЕНИ ПОРЪЧКИ - актуализирано на 16.06.2015
+            </a>
           </div>
         </div>
       </section>
@@ -58,22 +65,35 @@
           <div class="panel">
             <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
               <h3 class="panel-title">{{ entry.heading }}</h3>
-              <span class="toggle-icon" aria-hidden="true">Ў</span>
+              <span class="toggle-icon" aria-hidden="true">▾</span>
             </div>
             <div class="panel-body" id="panel-{{ entry.id }}">
               <div class="panel-content">
+                {% if entry.aop_number or entry.publish_date %}
+                <div class="panel-meta">
+                  {% if entry.aop_number %}
+                  <p><strong>Номер от АОП:</strong> {{ entry.aop_number }}</p>
+                  {% endif %}
+                  {% if entry.publish_date %}
+                  <p><strong>Дата на публикуване:</strong> {{ entry.publish_date }}</p>
+                  {% endif %}
+                </div>
+                {% endif %}
                 <h4>{{ entry.title }}</h4>
                 <p>{{ entry.content }}</p>
 
-                {% if entry.pdf_file %}
+                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
+                {% if pdf_files %}
                 <div class="pdf-attachment">
+                  {% for pdf_name in pdf_files %}
                   <a
-                    href="{{ url_for('uploaded_file', filename=entry.pdf_file) }}"
+                    href="{{ url_for('uploaded_file', filename=pdf_name) }}"
                     target="_blank"
                     class="pdf-link"
                   >
                     Преглед на PDF документ
                   </a>
+                  {% endfor %}
                 </div>
                 {% endif %}
 
@@ -97,8 +117,8 @@
                   МБАЛ „Рахила Ангелова“ АД гр. Перник съхранява и обогатява
                   традициите на 110-годишната си история. Днес тя е модерно
                   здравно заведение, което предлага квалифицирана болнична
-                  диагностична, лечебна и рехабилитационна помощ на нуждаещите
-                  се от активно лечение.
+                  диагностична, лечебна и рехабилитационна помощ на нуждаещите се
+                  от активно лечение.
                 </p>
 
                 <h4>УПРАВЛЕНИЕ:</h4>

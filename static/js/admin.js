@@ -4,13 +4,17 @@ document.getElementById('add-entry-form').addEventListener('submit', async funct
 
     const formData = new FormData();
     formData.append('heading', document.getElementById('heading').value);
+    formData.append('aop_number', document.getElementById('aop_number').value);
+    formData.append('publish_date', document.getElementById('publish_date').value);
     formData.append('title', document.getElementById('title').value);
     formData.append('content', document.getElementById('content').value);
     formData.append('page_id', document.getElementById('page_id').value);
 
-    const fileInput = document.getElementById('pdf_file');
+    const fileInput = document.getElementById('pdf_files');
     if (fileInput.files.length > 0) {
-        formData.append('pdf_file', fileInput.files[0]);
+        Array.from(fileInput.files).forEach(file => {
+            formData.append('pdf_files', file);
+        });
     }
 
     try {
@@ -22,19 +26,19 @@ document.getElementById('add-entry-form').addEventListener('submit', async funct
         const result = await response.json();
 
         if (result.success) {
-            alert('Записът е добавен успешно!');
+            alert('Р—Р°РїРёСЃСЉС‚ Рµ РґРѕР±Р°РІРµРЅ СѓСЃРїРµС€РЅРѕ!');
             location.reload();
         } else {
-            alert('Неуспешно добавяне на запис');
+            alert('РќРµСѓСЃРїРµС€РЅРѕ РґРѕР±Р°РІСЏРЅРµ РЅР° Р·Р°РїРёСЃ');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Възникна грешка при добавяне на запис');
+        alert('Р’СЉР·РЅРёРєРЅР° РіСЂРµС€РєР° РїСЂРё РґРѕР±Р°РІСЏРЅРµ РЅР° Р·Р°РїРёСЃ');
     }
 });
 
 async function deleteEntry(entryId) {
-    if (!confirm('Сигурни ли сте, че искате да изтриете този запис?')) {
+    if (!confirm('РЎРёРіСѓСЂРЅРё Р»Рё СЃС‚Рµ, С‡Рµ РёСЃРєР°С‚Рµ РґР° РёР·С‚СЂРёРµС‚Рµ С‚РѕР·Рё Р·Р°РїРёСЃ?')) {
         return;
     }
 
@@ -47,18 +51,18 @@ async function deleteEntry(entryId) {
 
         if (result.success) {
             document.getElementById(`entry-${entryId}`).remove();
-            alert('Записът е изтрит успешно!');
+            alert('Р—Р°РїРёСЃСЉС‚ Рµ РёР·С‚СЂРёС‚ СѓСЃРїРµС€РЅРѕ!');
 
             const entriesList = document.querySelector('.entries-list');
             if (entriesList.children.length === 0) {
-                entriesList.innerHTML = '<p class="no-entries">Няма записи.</p>';
+                entriesList.innerHTML = '<p class="no-entries">РќСЏРјР° Р·Р°РїРёСЃРё.</p>';
             }
         } else {
-            alert('Неуспешно изтриване на запис');
+            alert('РќРµСѓСЃРїРµС€РЅРѕ РёР·С‚СЂРёРІР°РЅРµ РЅР° Р·Р°РїРёСЃ');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Възникна грешка при изтриване на запис');
+        alert('Р’СЉР·РЅРёРєРЅР° РіСЂРµС€РєР° РїСЂРё РёР·С‚СЂРёРІР°РЅРµ РЅР° Р·Р°РїРёСЃ');
     }
 }
 
@@ -70,15 +74,18 @@ function editEntry(entryId) {
             if (entry) {
                 document.getElementById('edit-id').value = entry.id;
                 document.getElementById('edit-heading').value = entry.heading;
+                document.getElementById('edit-aop_number').value = entry.aop_number || '';
+                document.getElementById('edit-publish_date').value = entry.publish_date || '';
                 document.getElementById('edit-title').value = entry.title;
                 document.getElementById('edit-content').value = entry.content;
                 document.getElementById('edit-page_id').value = entry.page_id;
 
                 const pdfInfo = document.getElementById('current-pdf-info');
-                if (entry.pdf_file) {
-                    pdfInfo.textContent = `Текущ PDF: ${entry.pdf_file}`;
+                const pdfFiles = Array.isArray(entry.pdf_files) ? entry.pdf_files : (entry.pdf_file ? [entry.pdf_file] : []);
+                if (pdfFiles.length > 0) {
+                    pdfInfo.textContent = `РўРµРєСѓС‰Рё PDF С„Р°Р№Р»РѕРІРµ: ${pdfFiles.join(', ')}`;
                 } else {
-                    pdfInfo.textContent = 'Няма прикачен PDF';
+                    pdfInfo.textContent = 'РќСЏРјР° РїСЂРёРєР°С‡РµРЅ PDF';
                 }
 
                 document.getElementById('edit-modal').style.display = 'block';
@@ -86,7 +93,7 @@ function editEntry(entryId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Неуспешно зареждане на запис');
+            alert('РќРµСѓСЃРїРµС€РЅРѕ Р·Р°СЂРµР¶РґР°РЅРµ РЅР° Р·Р°РїРёСЃ');
         });
 }
 
@@ -100,13 +107,17 @@ document.getElementById('edit-entry-form').addEventListener('submit', async func
     const entryId = document.getElementById('edit-id').value;
     const formData = new FormData();
     formData.append('heading', document.getElementById('edit-heading').value);
+    formData.append('aop_number', document.getElementById('edit-aop_number').value);
+    formData.append('publish_date', document.getElementById('edit-publish_date').value);
     formData.append('title', document.getElementById('edit-title').value);
     formData.append('content', document.getElementById('edit-content').value);
     formData.append('page_id', document.getElementById('edit-page_id').value);
 
-    const fileInput = document.getElementById('edit-pdf_file');
+    const fileInput = document.getElementById('edit-pdf_files');
     if (fileInput.files.length > 0) {
-        formData.append('pdf_file', fileInput.files[0]);
+        Array.from(fileInput.files).forEach(file => {
+            formData.append('pdf_files', file);
+        });
     }
 
     try {
@@ -118,15 +129,15 @@ document.getElementById('edit-entry-form').addEventListener('submit', async func
         const result = await response.json();
 
         if (result.success) {
-            alert('Записът е обновен успешно!');
+            alert('Р—Р°РїРёСЃСЉС‚ Рµ РѕР±РЅРѕРІРµРЅ СѓСЃРїРµС€РЅРѕ!');
             closeEditModal();
             location.reload();
         } else {
-            alert('Неуспешно обновяване на запис');
+            alert('РќРµСѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІСЏРІР°РЅРµ РЅР° Р·Р°РїРёСЃ');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Възникна грешка при обновяване на запис');
+        alert('Р’СЉР·РЅРёРєРЅР° РіСЂРµС€РєР° РїСЂРё РѕР±РЅРѕРІСЏРІР°РЅРµ РЅР° Р·Р°РїРёСЃ');
     }
 });
 
@@ -142,14 +153,14 @@ window.onclick = function(event) {
 }
 
 function showAddPageModal() {
-    document.getElementById('page-modal-title').textContent = 'Нова страница';
+    document.getElementById('page-modal-title').textContent = 'РќРѕРІР° СЃС‚СЂР°РЅРёС†Р°';
     document.getElementById('page-id').value = '';
     document.getElementById('page-name').value = '';
     document.getElementById('page-modal').style.display = 'block';
 }
 
 function renamePage(pageId, currentName) {
-    document.getElementById('page-modal-title').textContent = 'Преименуване на страница';
+    document.getElementById('page-modal-title').textContent = 'РџСЂРµРёРјРµРЅСѓРІР°РЅРµ РЅР° СЃС‚СЂР°РЅРёС†Р°';
     document.getElementById('page-id').value = pageId;
     document.getElementById('page-name').value = currentName;
     document.getElementById('page-modal').style.display = 'block';
@@ -160,7 +171,7 @@ function closePageModal() {
 }
 
 async function deletePage(pageId) {
-    if (!confirm('Сигурни ли сте, че искате да изтриете тази страница? Може да изтриете само страници без записи.')) {
+    if (!confirm('РЎРёРіСѓСЂРЅРё Р»Рё СЃС‚Рµ, С‡Рµ РёСЃРєР°С‚Рµ РґР° РёР·С‚СЂРёРµС‚Рµ С‚Р°Р·Рё СЃС‚СЂР°РЅРёС†Р°? РњРѕР¶Рµ РґР° РёР·С‚СЂРёРµС‚Рµ СЃР°РјРѕ СЃС‚СЂР°РЅРёС†Рё Р±РµР· Р·Р°РїРёСЃРё.')) {
         return;
     }
 
@@ -172,14 +183,14 @@ async function deletePage(pageId) {
         const result = await response.json();
 
         if (result.success) {
-            alert('Страницата е изтрита успешно!');
+            alert('РЎС‚СЂР°РЅРёС†Р°С‚Р° Рµ РёР·С‚СЂРёС‚Р° СѓСЃРїРµС€РЅРѕ!');
             location.reload();
         } else {
-            alert(result.error || 'Неуспешно изтриване на страница');
+            alert(result.error || 'РќРµСѓСЃРїРµС€РЅРѕ РёР·С‚СЂРёРІР°РЅРµ РЅР° СЃС‚СЂР°РЅРёС†Р°');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Възникна грешка при изтриване на страница');
+        alert('Р’СЉР·РЅРёРєРЅР° РіСЂРµС€РєР° РїСЂРё РёР·С‚СЂРёРІР°РЅРµ РЅР° СЃС‚СЂР°РЅРёС†Р°');
     }
 }
 
@@ -205,15 +216,15 @@ document.getElementById('page-form').addEventListener('submit', async function(e
         const result = await response.json();
 
         if (result.success) {
-            alert(isEdit ? 'Страницата е преименувана успешно!' : 'Страницата е добавена успешно!');
+            alert(isEdit ? 'РЎС‚СЂР°РЅРёС†Р°С‚Р° Рµ РїСЂРµРёРјРµРЅСѓРІР°РЅР° СѓСЃРїРµС€РЅРѕ!' : 'РЎС‚СЂР°РЅРёС†Р°С‚Р° Рµ РґРѕР±Р°РІРµРЅР° СѓСЃРїРµС€РЅРѕ!');
             closePageModal();
             location.reload();
         } else {
-            alert('Неуспешно запазване на страница');
+            alert('РќРµСѓСЃРїРµС€РЅРѕ Р·Р°РїР°Р·РІР°РЅРµ РЅР° СЃС‚СЂР°РЅРёС†Р°');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Възникна грешка при запазване на страница');
+        alert('Р’СЉР·РЅРёРєРЅР° РіСЂРµС€РєР° РїСЂРё Р·Р°РїР°Р·РІР°РЅРµ РЅР° СЃС‚СЂР°РЅРёС†Р°');
     }
 });
 
@@ -233,4 +244,4 @@ function filterEntries() {
             }
         }
     });
-}
+}

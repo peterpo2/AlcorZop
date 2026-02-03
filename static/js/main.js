@@ -51,7 +51,7 @@ function renderEntries(entries) {
     container.innerHTML = '';
 
     if (!entries.length) {
-        container.innerHTML = '<div class="no-entries"><p>Няма намерени резултати.</p></div>';
+        container.innerHTML = '<div class="no-entries"><p>РќСЏРјР° РЅР°РјРµСЂРµРЅРё СЂРµР·СѓР»С‚Р°С‚Рё.</p></div>';
         return;
     }
 
@@ -60,23 +60,31 @@ function renderEntries(entries) {
             <div class="panel">
                 <div class="panel-heading" onclick="togglePanel(${entry.id})">
                     <h3 class="panel-title">${entry.heading}</h3>
-                    <span class="toggle-icon" aria-hidden="true">Ў</span>
+                    <span class="toggle-icon" aria-hidden="true">РЋ</span>
                 </div>
                 <div class="panel-body" id="panel-${entry.id}">
                     <div class="panel-content">
+                        ${(entry.aop_number || entry.publish_date) ? `
+                            <div class="panel-meta">
+                                ${entry.aop_number ? `<p><strong>РќРѕРјРµСЂ РѕС‚ РђРћРџ:</strong> ${entry.aop_number}</p>` : ''}
+                                ${entry.publish_date ? `<p><strong>Р”Р°С‚Р° РЅР° РїСѓР±Р»РёРєСѓРІР°РЅРµ:</strong> ${entry.publish_date}</p>` : ''}
+                            </div>
+                        ` : ''}
                         <h4>${entry.title}</h4>
                         <p>${entry.content}</p>
-                        ${entry.pdf_file ? `
+                        ${(entry.pdf_files && entry.pdf_files.length) ? `
                             <div class="pdf-attachment">
-                                <a href="/uploads/${entry.pdf_file}" target="_blank" class="pdf-link">
-                                    Преглед на PDF документ
-                                </a>
+                                ${entry.pdf_files.map(file => `
+                                    <a href="/uploads/${file}" target="_blank" class="pdf-link">
+                                        РџСЂРµРіР»РµРґ РЅР° PDF РґРѕРєСѓРјРµРЅС‚
+                                    </a>
+                                `).join('')}
                             </div>` : ''
                         }
-                        <small class="entry-date">Публикувано: ${entry.date}</small>
+                        <small class="entry-date">РџСѓР±Р»РёРєСѓРІР°РЅРѕ: ${entry.date}</small>
                     </div>
                 </div>
             </div>
         `);
     });
-}
+}

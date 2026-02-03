@@ -57,23 +57,31 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="heading">Заглавие на панела</label>
-                        <input type="text" id="heading" name="heading" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="title">Подзаглавие</label>
-                        <input type="text" id="title" name="title" required>
-                    </div>
+                <div class="form-group">
+                    <label for="heading">Заглавие на панела</label>
+                    <input type="text" id="heading" name="heading" required>
+                </div>
+                <div class="form-group">
+                    <label for="aop_number">Номер от АОП</label>
+                    <input type="text" id="aop_number" name="aop_number">
+                </div>
+                <div class="form-group">
+                    <label for="publish_date">Дата на публикуване</label>
+                    <input type="datetime-local" id="publish_date" name="publish_date">
+                </div>
+                <div class="form-group">
+                    <label for="title">Подзаглавие</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
                     <div class="form-group">
                         <label for="content">Съдържание</label>
                         <textarea id="content" name="content" rows="5" required></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="pdf_file">Прикачи PDF (по избор)</label>
-                        <input type="file" id="pdf_file" name="pdf_file" accept=".pdf">
-                        <small class="form-help">Максимален размер: 16MB</small>
-                    </div>
+                <div class="form-group">
+                    <label for="pdf_files">Прикачи PDF (по избор)</label>
+                    <input type="file" id="pdf_files" name="pdf_files" accept=".pdf" multiple>
+                    <small class="form-help">Максимален размер: 16MB</small>
+                </div>
                     <button type="submit" class="btn btn-primary">Добави</button>
                 </form>
             </div>
@@ -103,10 +111,11 @@
                                 </span>
                                 <h4>{{ entry.heading }}</h4>
                                 <p><strong>{{ entry.title }}</strong></p>
-                                <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
-                                {% if entry.pdf_file %}
-                                <p class="pdf-indicator">PDF: {{ entry.pdf_file }}</p>
-                                {% endif %}
+                            <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
+                            {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
+                            {% if pdf_files %}
+                            <p class="pdf-indicator">PDF: {{ pdf_files|join(', ') }}</p>
+                            {% endif %}
                                 <small>{{ entry.date }}</small>
                             </div>
                             <div class="entry-actions">
@@ -142,6 +151,14 @@
                     <input type="text" id="edit-heading" name="heading" required>
                 </div>
                 <div class="form-group">
+                    <label for="edit-aop_number">Номер от АОП</label>
+                    <input type="text" id="edit-aop_number" name="aop_number">
+                </div>
+                <div class="form-group">
+                    <label for="edit-publish_date">Дата на публикуване</label>
+                    <input type="datetime-local" id="edit-publish_date" name="publish_date">
+                </div>
+                <div class="form-group">
                     <label for="edit-title">Подзаглавие</label>
                     <input type="text" id="edit-title" name="title" required>
                 </div>
@@ -150,8 +167,8 @@
                     <textarea id="edit-content" name="content" rows="5" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="edit-pdf_file">Смяна на PDF (по избор)</label>
-                    <input type="file" id="edit-pdf_file" name="pdf_file" accept=".pdf">
+                    <label for="edit-pdf_files">Смяна на PDF (по избор)</label>
+                    <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf" multiple>
                     <small class="form-help" id="current-pdf-info"></small>
                 </div>
                 <button type="submit" class="btn btn-primary">Обнови</button>
