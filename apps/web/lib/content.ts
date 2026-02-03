@@ -12,9 +12,17 @@ export const getMenuPages = async (): Promise<MenuPage[]> =>
     select: { id: true, title: true, slug: true, order: true },
   });
 
-export const getPageBySlug = async (slug: string): Promise<PageItem | null> =>
-  prisma.page.findUnique({
-    where: { slug },
+export const getPageBySlug = async (slug: string): Promise<PageItem | null> => {
+  const normalized = (slug ?? '').trim();
+  if (!normalized) return null;
+  const numericId = Number(normalized);
+
+  const where = Number.isInteger(numericId) && numericId > 0 && String(numericId) === normalized
+    ? { id: numericId }
+    : { slug: normalized };
+
+  return prisma.page.findUnique({
+    where,
     include: {
       topics: {
         orderBy: { order: 'asc' },
@@ -29,6 +37,7 @@ export const getPageBySlug = async (slug: string): Promise<PageItem | null> =>
       },
     },
   });
+};
 
 export const getDocumentBySlug = async (slug: string): Promise<DocumentDetail | null> =>
   prisma.document.findUnique({
