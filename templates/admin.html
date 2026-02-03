@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
@@ -26,35 +26,73 @@
         </header>
 
         <main class="admin-main">
-            <div class="admin-section">
-                <h2>Страници</h2>
-                <div class="page-management">
-                    <div class="pages-list-admin">
-                        {% for page in pages %}
-                        <div class="page-item" id="page-item-{{ page.id }}">
-                            <span class="page-name">{{ page.name }}</span>
-                            <div class="page-actions">
-                                <button onclick="renamePage({{ page.id }}, '{{ page.name }}')" class="btn-small btn-edit">Преименувай</button>
-                                <button onclick="deletePage({{ page.id }})" class="btn-small btn-delete">Изтрий</button>
-                            </div>
+            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
+                <div class="section-header">
+                    <h2>Профил на Купувача</h2>
+                    <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>
+                </div>
+                <div class="section-body">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="profile-title">Заглавие</label>
+                            <input type="text" id="profile-title" name="profile_title" value="{{ profile.title }}" required>
                         </div>
-                        {% endfor %}
-                    </div>
-                    <button onclick="showAddPageModal()" class="btn btn-primary" style="margin-top: 15px;">Нова страница</button>
+                        <div class="form-group">
+                        <label for="profile-body">Съдържание</label>
+                        <textarea id="profile-body" name="profile_body" rows="10" required>{{ profile.body }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Запази</button>
+                    </form>
                 </div>
             </div>
 
-            <div class="admin-section">
-                <h2>Нов запис</h2>
-                <form id="add-entry-form" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label for="page_id">Избери страница</label>
-                        <select id="page_id" name="page_id" required>
+            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
+                <div class="section-header">
+                    <h2>Страници</h2>
+                    <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>
+                </div>
+                <div class="section-body">
+                    <div class="page-management">
+                        <div class="pages-list-admin">
                             {% for page in pages %}
-                            <option value="{{ page.id }}">{{ page.name }}</option>
+                            <div class="page-item" id="page-item-{{ page.id }}">
+                                <span class="page-name" title="{{ page.name }}">{{ page.name }}</span>
+                                <div class="page-actions">
+                                    <button onclick="renamePage({{ page.id }}, '{{ page.name }}')" class="btn-small btn-edit icon-btn" title="Преименувай" aria-label="Преименувай">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M4 20h4.5l9.9-9.9-4.5-4.5L4 15.5V20z" fill="currentColor"/>
+                                            <path d="M14.9 5.1l4 4 1.4-1.4a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.4 1.4z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                    <button onclick="deletePage({{ page.id }})" class="btn-small btn-delete icon-btn" title="Изтрий" aria-label="Изтрий">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                             {% endfor %}
-                        </select>
+                        </div>
+                        <button onclick="showAddPageModal()" class="btn btn-primary btn-small btn-compact btn-static" style="margin-top: 15px;">Нова страница</button>
                     </div>
+                </div>
+            </div>
+
+            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
+                <div class="section-header">
+                    <h2>Нов запис</h2>
+                    <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>
+                </div>
+                <div class="section-body">
+                    <form id="add-entry-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="page_id">Избери страница</label>
+                            <select id="page_id" name="page_id" required>
+                                {% for page in pages %}
+                                <option value="{{ page.id }}">{{ page.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                 <div class="form-group">
                     <label for="heading">Заглавие на панела</label>
                     <input type="text" id="heading" name="heading" required>
@@ -66,7 +104,7 @@
                 <div class="form-group">
                     <label for="publish_date">Въведете дата</label>
                     <div class="date-field">
-                        <input type="date" id="publish_date" name="publish_date" class="date-input">
+                        <input type="date" id="publish_date" name="publish_date" class="date-input" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -89,6 +127,7 @@
                 </div>
                     <button type="submit" class="btn btn-primary">Добави</button>
                 </form>
+                </div>
             </div>
 
             <div class="admin-section">

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+﻿from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
 from functools import wraps
 from flask import Response
 import json
@@ -22,6 +22,7 @@ MAX_PDF_FILES = 5
 # Data files
 DATA_FILE = 'entries.json'
 PAGES_FILE = 'pages.json'
+PROFILE_FILE = 'profile.json'
 
 # Create uploads directory if it doesn't exist (and migrate legacy folder if present)
 legacy_uploads = os.path.join(BASE_DIR, 'Uploads')
@@ -178,6 +179,67 @@ def save_pages(pages):
     with open(PAGES_FILE, 'w', encoding='utf-8') as f:
         json.dump(pages, f, ensure_ascii=False, indent=2)
 
+def default_profile():
+    return {
+        "title": "Профил на купувача – МБАЛ „Рахила Ангелова“ – гр. Перник",
+        "body": (
+            "МБАЛ „Рахила Ангелова“ АД – гр. Перник\n"
+            "\n"
+            "МБАЛ „Рахила Ангелова“ АД гр. Перник съхранява и обогатява "
+            "традициите на 110-годишната си история. Днес тя е модерно "
+            "здравно заведение, което предлага квалифицирана болнична "
+            "диагностична, лечебна и рехабилитационна помощ на нуждаещите се "
+            "от активно лечение.\n"
+            "\n"
+            "УПРАВЛЕНИЕ:\n"
+            "Д-р Анатоли Митов\n"
+            "Изпълнителен директор на МБАЛ „Рахила Ангелова“, гр. Перник\n"
+            "тел.: 076 / 601 360\n"
+            "\n"
+            "Д-р Симеон Станков\n"
+            "Заместник-директор „Медицински дейности“\n"
+            "тел.: 076 / 601 360\n"
+            "\n"
+            "ЮРИСТИ:\n"
+            "—\n"
+            "\n"
+            "АДРЕС:\n"
+            "Лечебното заведение се намира на адрес:\n"
+            "гр. Перник, ул. „Брезник“ №2, ПК 2300\n"
+            "\n"
+            "Електронна поща:\n"
+            "mbalpk@abv.bg"
+        )
+    }
+
+def normalize_profile_body(text):
+    body = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    body = re.sub(r"<br\\s*/?>", "\n", body, flags=re.IGNORECASE)
+    body = re.sub(r"</(p|h1|h2|h3|h4|h5|h6)>", "\n", body, flags=re.IGNORECASE)
+    body = re.sub(r"<[^>]+>", "", body)
+    body = re.sub(r"\n{3,}", "\n\n", body).strip()
+    return body
+
+def load_profile():
+    if os.path.exists(PROFILE_FILE):
+        with open(PROFILE_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if isinstance(data, dict) and data.get('title') and data.get('body'):
+                normalized_body = normalize_profile_body(data.get('body', ''))
+                if normalized_body != data.get('body'):
+                    data['body'] = normalized_body
+                    save_profile(data)
+                return data
+    return default_profile()
+
+def save_profile(profile):
+    profile = {
+        'title': profile.get('title', ''),
+        'body': normalize_profile_body(profile.get('body', ''))
+    }
+    with open(PROFILE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+
 CREDENTIALS_FILE = 'cred.json'
 
 def load_admin_credentials():
@@ -219,11 +281,12 @@ def index():
 
     entries = load_entries()
     pages = load_pages()
+    profile = load_profile()
 
     # Filter entries by page
     page_entries = [e for e in entries if e.get('page_id') == page_id]
 
-    return render_template('index.html', entries=page_entries, pages=pages, current_page=page_id)
+    return render_template('index.html', entries=page_entries, pages=pages, current_page=page_id, profile=profile)
 
 @app.route('/page/<int:page_id>')
 def page_view(page_id):
@@ -236,7 +299,8 @@ def admin():
     """Admin page for managing entries"""
     entries = load_entries()
     pages = load_pages()
-    return render_template('admin.html', entries=entries, pages=pages)
+    profile = load_profile()
+    return render_template('admin.html', entries=entries, pages=pages, profile=profile)
 
 @app.route('/logout')
 def logout():
@@ -270,8 +334,12 @@ def add_entry():
     content = request.form.get('content', '')
     files_raw = request.form.get('files', '')
     pdf_links_raw = request.form.get('pdf_links', '')
-    page_id = int(request.form.get('page_id', 1))
+    page_id_raw = request.form.get('page_id', '').strip()
+    page_id = int(page_id_raw) if page_id_raw.isdigit() else 0
     pdf_label = request.form.get('pdf_label', '').strip()
+
+    if not heading.strip() or not publish_date.strip() or page_id <= 0:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
     # Handle file upload
     pdf_items = []
@@ -516,6 +584,21 @@ def get_pages():
     """API endpoint to get all pages"""
     pages = load_pages()
     return jsonify(pages)
+
+@app.route('/api/profile', methods=['GET'])
+def get_profile():
+    return jsonify(load_profile())
+
+@app.route('/api/profile', methods=['PUT'])
+def update_profile():
+    data = request.json or {}
+    title = (data.get('title') or '').strip()
+    body = (data.get('body') or '').strip()
+    if not title or not body:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    profile = {'title': title, 'body': body}
+    save_profile(profile)
+    return jsonify({'success': True, 'profile': profile})
 
 @app.route('/api/pages', methods=['POST'])
 def add_page():

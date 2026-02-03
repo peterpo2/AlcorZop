@@ -615,35 +615,94 @@ a:hover {
 
 .pages-list-admin {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .page-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 8px 10px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--stroke);
     background: #ffffff;
+    flex: 1 1 320px;
 }
 
 .page-name {
     font-weight: 600;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .page-actions,
 .entry-actions {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .btn-small {
     padding: 6px 10px;
     border-radius: 999px;
     font-size: 12px;
+}
+
+.btn-compact {
+    padding: 6px 12px;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.btn-static {
+    transition: none;
+}
+
+.btn.btn-static:hover {
+    background: var(--accent);
+    transform: none;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.section-toggle {
+    border: 1px solid var(--stroke);
+    background: #f7f7f7;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.admin-section.collapsed .section-body {
+    display: none;
 }
 
 .filter-section select {

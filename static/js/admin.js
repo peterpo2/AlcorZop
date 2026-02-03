@@ -20,7 +20,69 @@ function setupDateFields() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', setupDateFields);
+function setupCollapsibles() {
+    document.querySelectorAll('.admin-section[data-collapsible=\"true\"]').forEach(section => {
+        const toggle = section.querySelector('.section-toggle');
+        const body = section.querySelector('.section-body');
+        const isCollapsed = section.dataset.collapsed === 'true';
+        const applyState = collapsed => {
+            section.classList.toggle('collapsed', collapsed);
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                toggle.textContent = collapsed ? 'Покажи' : 'Скрий';
+            }
+            if (body) {
+                body.style.display = collapsed ? 'none' : '';
+            }
+        };
+        applyState(isCollapsed);
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const currentlyCollapsed = section.classList.contains('collapsed');
+                section.dataset.collapsed = currentlyCollapsed ? 'false' : 'true';
+                applyState(!currentlyCollapsed);
+            });
+        }
+    });
+}
+
+function setupProfileForm() {
+    const form = document.getElementById('profile-form');
+    if (!form) {
+        return;
+    }
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const title = document.getElementById('profile-title').value.trim();
+        const body = document.getElementById('profile-body').value.trim();
+        if (!title || !body) {
+            alert('Моля, попълнете заглавие и съдържание.');
+            return;
+        }
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, body })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('Профилът е обновен успешно!');
+            } else {
+                alert(result.error || 'Неуспешно обновяване на профил.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Възникна грешка при обновяване на профил.');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupDateFields();
+    setupCollapsibles();
+    setupProfileForm();
+});
 
 document.getElementById('add-entry-form').addEventListener('submit', async function(e) {
     e.preventDefault();

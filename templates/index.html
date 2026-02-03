@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="bg">
   <head>
     <meta charset="UTF-8" />
@@ -72,6 +72,17 @@
           </button>
         </div>
         <div class="panels-container">
+          <div class="panel static-profile">
+            <div class="panel-heading">
+              <h3 class="panel-title">{{ profile.title }}</h3>
+            </div>
+            <div class="panel-body open">
+              <div class="panel-content profile-content">
+                {{ profile.body | e | replace('\r\n', '\n') | replace('\n', '<br>') | safe }}
+              </div>
+            </div>
+          </div>
+
           {% if entries %} {% for entry in entries %}
           <div class="panel">
             <div class="panel-heading collapsed" onclick="togglePanel({{ entry.id }})">
@@ -146,58 +157,7 @@
               </div>
             </div>
           </div>
-          {% endfor %} {% else %}
-          <div class="panel static-profile">
-            <div class="panel-heading">
-              <h3 class="panel-title">
-                Профил на купувача – МБАЛ „Рахила Ангелова“ – гр. Перник
-              </h3>
-            </div>
-
-            <div class="panel-body open">
-              <div class="panel-content">
-                <h4>МБАЛ „Рахила Ангелова“ АД – гр. Перник</h4>
-
-                <p>
-                  МБАЛ „Рахила Ангелова“ АД гр. Перник съхранява и обогатява
-                  традициите на 110-годишната си история. Днес тя е модерно
-                  здравно заведение, което предлага квалифицирана болнична
-                  диагностична, лечебна и рехабилитационна помощ на нуждаещите се
-                  от активно лечение.
-                </p>
-
-                <h4>УПРАВЛЕНИЕ:</h4>
-
-                <p>
-                  <strong>Д-р Анатоли Митов</strong><br />
-                  Изпълнителен директор на МБАЛ „Рахила Ангелова“, гр. Перник<br />
-                  тел.: 076 / 601 360
-                </p>
-
-                <p>
-                  <strong>Д-р Симеон Станков</strong><br />
-                  Заместник-директор „Медицински дейности“<br />
-                  тел.: 076 / 601 360
-                </p>
-
-                <h4>ЮРИСТИ:</h4>
-                <p>—</p>
-
-                <h4>АДРЕС:</h4>
-
-                <p>
-                  Лечебното заведение се намира на адрес:<br />
-                  гр. Перник, ул. „Брезник“ №2, ПК 2300
-                </p>
-
-                <p>
-                  <strong>Електронна поща:</strong><br />
-                  <a href="mailto:mbalpk@abv.bg">mbalpk@abv.bg</a>
-                </p>
-              </div>
-            </div>
-          </div>
-          {% endif %}
+          {% endfor %} {% endif %}
         </div>
       </main>
     </div>
