@@ -116,7 +116,13 @@
                                 </span>
                                 <h4>{{ entry.heading }}</h4>
                                 <p><strong>{{ entry.title }}</strong></p>
+                            {% if entry.publish_date %}
+                            <p class="entry-preview">Началната дата: {{ entry.publish_date }}</p>
+                            {% elif entry.heading %}
+                            <p class="entry-preview">{{ entry.heading }}</p>
+                            {% elif entry.content %}
                             <p class="entry-preview">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
+                            {% endif %}
                             {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
                             {% if pdf_files %}
                             <div class="pdf-indicator">

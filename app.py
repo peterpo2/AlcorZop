@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
+app.json.ensure_ascii = False
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Store PDFs in the uploads folder (case-sensitive on Linux/Docker).
@@ -44,6 +45,7 @@ def load_entries():
             entries = json.load(f)
             for entry in entries:
                 normalize_pdf_items(entry)
+                normalize_files_items(entry)
             return entries
     return []
 
@@ -65,12 +67,46 @@ def normalize_pdf_items(entry):
             pdf_items.append({'filename': legacy, 'label': None})
     entry['pdf_files'] = pdf_items
 
+def normalize_files_items(entry):
+    """Normalize structured files to a list of {name, url, published_at} dicts."""
+    files = []
+    raw = entry.get('files', [])
+    if isinstance(raw, list):
+        for item in raw:
+            if isinstance(item, dict):
+                name = item.get('name') or item.get('file_name') or item.get('title') or ''
+                url = item.get('url') or item.get('href') or ''
+                published = item.get('published_at') or item.get('published') or item.get('date') or ''
+                if name or url or published:
+                    files.append({
+                        'name': name,
+                        'url': url,
+                        'published_at': published
+                    })
+    entry['files'] = files
+
 def build_pdf_label(raw_label, index, total):
     if not raw_label:
         return None
     if total <= 1:
         return raw_label
     return f"{raw_label} ({index})"
+
+def normalize_incoming_files(items):
+    files = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        name = item.get('name') or item.get('file_name') or item.get('title') or ''
+        url = item.get('url') or item.get('href') or ''
+        published = item.get('published_at') or item.get('published') or item.get('date') or ''
+        if name or url or published:
+            files.append({
+                'name': name,
+                'url': url,
+                'published_at': published
+            })
+    return files
 
 def save_entries(entries):
     """Save entries to JSON file"""
@@ -140,6 +176,11 @@ def index():
 
     return render_template('index.html', entries=page_entries, pages=pages, current_page=page_id)
 
+@app.route('/page/<int:page_id>')
+def page_view(page_id):
+    """Shortcut route to view a specific page."""
+    return redirect(url_for('index', page=page_id))
+
 @app.route('/admin')
 @requires_auth
 def admin():
@@ -173,7 +214,12 @@ def add_entry():
     heading = request.form.get('heading', '')
     aop_number = request.form.get('aop_number', '')
     publish_date = request.form.get('publish_date', '')
+    start_date = request.form.get('start_date', '')
+    internal_number = request.form.get('internal_number', '')
+    source_url = request.form.get('source_url', '')
+    imported_at = request.form.get('imported_at', '')
     content = request.form.get('content', '')
+    files_raw = request.form.get('files', '')
     page_id = int(request.form.get('page_id', 1))
     pdf_label = request.form.get('pdf_label', '').strip()
     
@@ -198,13 +244,28 @@ def add_entry():
         pdf_items.append({'filename': pdf_filename, 'label': label})
         label_index += 1
 
+    files_list = []
+    if files_raw:
+        try:
+            files_list = json.loads(files_raw)
+            if not isinstance(files_list, list):
+                files_list = []
+        except json.JSONDecodeError:
+            files_list = []
+    files_list = normalize_incoming_files(files_list)
+
     new_entry = {
         'id': max([e['id'] for e in entries], default=0) + 1,
         'title': title,
         'heading': heading,
         'aop_number': aop_number,
         'publish_date': publish_date,
+        'start_date': start_date,
+        'internal_number': internal_number,
         'content': content,
+        'files': files_list,
+        'source_url': source_url,
+        'imported_at': imported_at,
         'page_id': page_id,
         'pdf_files': pdf_items,
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -249,7 +310,12 @@ def update_entry(entry_id):
         heading = data.get('heading', '')
         aop_number = data.get('aop_number', '')
         publish_date = data.get('publish_date', '')
+        start_date = data.get('start_date', '')
+        internal_number = data.get('internal_number', '')
         content = data.get('content', '')
+        files_list = data.get('files', [])
+        source_url = data.get('source_url', '')
+        imported_at = data.get('imported_at', '')
         page_id = data.get('page_id', 1)
         pdf_filenames = None
     else:
@@ -257,7 +323,21 @@ def update_entry(entry_id):
         heading = request.form.get('heading', '')
         aop_number = request.form.get('aop_number', '')
         publish_date = request.form.get('publish_date', '')
+        start_date = request.form.get('start_date', '')
+        internal_number = request.form.get('internal_number', '')
         content = request.form.get('content', '')
+        files_raw = request.form.get('files', '')
+    files_list = []
+    if files_raw:
+        try:
+            files_list = json.loads(files_raw)
+            if not isinstance(files_list, list):
+                files_list = []
+        except json.JSONDecodeError:
+            files_list = []
+        files_list = normalize_incoming_files(files_list)
+        source_url = request.form.get('source_url', '')
+        imported_at = request.form.get('imported_at', '')
         page_id = int(request.form.get('page_id', 1))
         pdf_label = request.form.get('pdf_label', '').strip()
         
@@ -295,7 +375,12 @@ def update_entry(entry_id):
             entry['heading'] = heading
             entry['aop_number'] = aop_number
             entry['publish_date'] = publish_date
+            entry['start_date'] = start_date
+            entry['internal_number'] = internal_number
             entry['content'] = content
+            entry['files'] = files_list
+            entry['source_url'] = source_url
+            entry['imported_at'] = imported_at
             entry['page_id'] = page_id
             if pdf_items:
                 entry['pdf_files'] = entry.get('pdf_files', []) + pdf_items
@@ -384,7 +469,22 @@ def search_entries():
         if page_id and str(e['page_id']) != page_id:
             continue
 
-        haystack = f"{e.get('title','')} {e.get('heading','')} {e.get('aop_number','')} {e.get('publish_date','')} {e.get('content','')}".lower()
+        files_text = ""
+        for f in e.get('files', []) or []:
+            name = f.get('name', '') if isinstance(f, dict) else ''
+            url = f.get('url', '') if isinstance(f, dict) else ''
+            published = f.get('published_at', '') if isinstance(f, dict) else ''
+            files_text += f" {name} {url} {published}"
+
+        haystack = (
+            f"{e.get('title','')} "
+            f"{e.get('heading','')} "
+            f"{e.get('aop_number','')} "
+            f"{e.get('publish_date','')} "
+            f"{e.get('internal_number','')} "
+            f"{e.get('content','')} "
+            f"{files_text}"
+        ).lower()
 
         if query in haystack:
             results.append(e)

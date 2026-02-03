@@ -70,42 +70,66 @@
           {% if entries %} {% for entry in entries %}
           <div class="panel">
             <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
-              <h3 class="panel-title">{{ entry.heading }}</h3>
+              {% set display_title = entry.title or entry.heading %}
+              <h3 class="panel-title">{{ display_title }}</h3>
               <span class="toggle-icon" aria-hidden="true">▾</span>
             </div>
             <div class="panel-body" id="panel-{{ entry.id }}">
               <div class="panel-content">
-                {% if entry.aop_number or entry.publish_date %}
                 <div class="panel-meta">
-                  {% if entry.aop_number %}
-                  <p><strong>Номер от АОП:</strong> {{ entry.aop_number }}</p>
-                  {% endif %}
                   {% if entry.publish_date %}
-                  <p><strong>Дата на публикуване:</strong> {{ entry.publish_date }}</p>
+                  <div class="meta-row"><strong>Началната дата:</strong> {{ entry.publish_date }}</div>
+                  {% endif %}
+                  {% if entry.aop_number %}
+                  <div class="meta-row"><strong>Номер от АОП:</strong> {{ entry.aop_number }}</div>
+                  {% endif %}
+                  {% if entry.internal_number %}
+                  <div class="meta-row"><strong>Вътрешен номер:</strong> {{ entry.internal_number }}</div>
                   {% endif %}
                 </div>
-                {% endif %}
-                <h4>{{ entry.title }}</h4>
-                <p>{{ entry.content }}</p>
 
-                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
-                {% if pdf_files %}
-                <div class="pdf-attachment">
-                  {% for pdf_name in pdf_files %}
-                  <a
-                    href="{{ url_for('pdf_viewer', filename=pdf_name.filename if pdf_name is mapping else pdf_name) }}"
-                    class="pdf-link"
-                    target="_blank" rel="noopener"
-                  >
-                    {% if pdf_name is mapping %}
-                    {{ pdf_name.label or pdf_name.filename }}
-                    {% else %}
-                    {{ pdf_name }}
-                    {% endif %}
-                  </a>
-                  {% endfor %}
-                </div>
+                {% if entry.content %}
+                <p>{{ entry.content }}</p>
                 {% endif %}
+
+                {% set structured_files = entry.files if entry.files is defined else [] %}
+                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
+                <div class="files-section">
+                  <h4>Файлове</h4>
+                  {% if structured_files and structured_files|length > 0 %}
+                  <ul class="files">
+                    {% for file in structured_files %}
+                    <li>
+                      <a href="{{ file.url }}" target="_blank" rel="noopener">
+                        {{ file.name or file.url }}
+                      </a>
+                      {% if file.published_at %}
+                      <span class="file-meta"> — Публикувано на: {{ file.published_at }}</span>
+                      {% endif %}
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% elif pdf_files %}
+                  <ul class="files">
+                    {% for pdf_name in pdf_files %}
+                    <li>
+                      <a
+                        href="{{ url_for('pdf_viewer', filename=pdf_name.filename if pdf_name is mapping else pdf_name) }}"
+                        target="_blank" rel="noopener"
+                      >
+                        {% if pdf_name is mapping %}
+                        {{ pdf_name.label or pdf_name.filename }}
+                        {% else %}
+                        {{ pdf_name }}
+                        {% endif %}
+                      </a>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% else %}
+                  <p class="no-files">Няма прикачени файлове.</p>
+                  {% endif %}
+                </div>
 
                 <small class="entry-date">Публикувано: {{ entry.date }}</small>
               </div>

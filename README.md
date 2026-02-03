@@ -107,6 +107,31 @@ panel_system/
 **Files:**
 - `GET /uploads/<filename>` - Serve uploaded PDF files
 
+## Import from Wayback (urls.csv)
+
+Create a `urls.csv` in the repo root with:
+
+```
+url,page_name,subtopic
+http://web.archive.org/web/20230127201504/http://zop.bolnicapernik.com/archive/,Архив,
+```
+
+Notes:
+- `url` and `page_name` are required.
+- `subtopic` is optional and is used only if a panel is missing “Началната дата”.
+- Broken or missing Wayback pages are logged and skipped.
+
+Run the importer:
+
+```bash
+python tools/import_wayback.py --csv urls.csv
+```
+
+Optional flags:
+- `--dry-run` prints what would be created without posting to the API.
+- `--auth-user` and `--auth-pass` for Basic Auth if your API is protected.
+- `--sleep 1.0` and `--timeout 60` tune network behavior.
+
 ## Panel Structure
 
 Each panel contains:
