@@ -2,17 +2,31 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getAdminPath, buildAdminHref } from '@/lib/adminPath';
 import { createPage, deletePage, updatePage } from '@/app/admin/pages/actions';
+import { getAdminErrorMessage } from '@/lib/adminErrors';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminPages() {
+export default async function AdminPages({
+  searchParams,
+}: {
+  searchParams?: { error?: string; detail?: string };
+}) {
   const pages = await prisma.page.findMany({
     orderBy: { order: 'asc' },
   });
   const adminPath = getAdminPath();
+  const errorMessage = getAdminErrorMessage(searchParams?.error);
+  const errorDetail = typeof searchParams?.detail === 'string' ? searchParams.detail : '';
 
   return (
     <div className="space-y-8">
+      {errorMessage ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-semibold">Action failed</p>
+          <p>{errorMessage}</p>
+          {errorDetail ? <p className="mt-1 text-xs text-red-600">{errorDetail}</p> : null}
+        </div>
+      ) : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-2xl font-semibold">Pages</h2>
         <p className="mt-2 text-sm text-slate-600">Create pages and manage their topics.</p>

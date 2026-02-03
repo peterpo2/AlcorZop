@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { IBM_Plex_Sans, Newsreader } from 'next/font/google';
+import Link from 'next/link';
 import './globals.css';
 import { getMenuPages } from '@/lib/content';
 import { TopNav } from '@/components/TopNav';
@@ -39,7 +40,14 @@ export default async function RootLayout({
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-red-100">Document Portal</p>
-                <h1 className="font-serif text-2xl font-semibold">AlcorZop Knowledge Library</h1>
+                <h1 className="font-serif text-2xl font-semibold">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 transition hover:bg-white/20"
+                  >
+                    AlcorZop Knowledge Library
+                  </Link>
+                </h1>
               </div>
               <TopNav pages={pages} />
             </div>

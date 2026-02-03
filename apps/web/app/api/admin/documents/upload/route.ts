@@ -7,6 +7,7 @@ import { slugify } from '@/lib/slugify';
 import { ensureUploadDir } from '@/lib/upload';
 import { SESSION_COOKIE, getSessionByToken } from '@/lib/session';
 import { getRequestOrigin } from '@/lib/requestOrigin';
+import { withAdminError } from '@/lib/adminErrors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,14 +28,21 @@ export async function POST(request: NextRequest) {
   const slugInput = String(form.get('slug') || '').trim();
   const returnTo = String(form.get('returnTo') || '').trim();
   const subtopicId = Number(form.get('subtopicId'));
+  const redirectError = (message: string, status: number) => {
+    if (returnTo && isSafeRedirect(returnTo)) {
+      const url = new URL(withAdminError(returnTo, 'upload', message), getRequestOrigin(request));
+      return NextResponse.redirect(url, { status: 303 });
+    }
+    return NextResponse.json({ error: message }, { status });
+  };
 
   if (!subtopicId) {
-    return NextResponse.json({ error: 'Subtopic is required.' }, { status: 400 });
+    return redirectError('Subtopic is required.', 400);
   }
 
   const subtopic = await prisma.subtopic.findUnique({ where: { id: subtopicId } });
   if (!subtopic) {
-    return NextResponse.json({ error: 'Subtopic not found.' }, { status: 404 });
+    return redirectError('Subtopic not found.', 404);
   }
 
   const files = rawFiles.filter((entry): entry is File => entry instanceof File);
@@ -43,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (files.length === 0) {
-    return NextResponse.json({ error: 'File is required.' }, { status: 400 });
+    return redirectError('File is required.', 400);
   }
 
   const maxUploadMb = Number(process.env.MAX_UPLOAD_MB || 20);
@@ -52,13 +60,10 @@ export async function POST(request: NextRequest) {
 
   for (const file of files) {
     if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Only PDF files are allowed.' }, { status: 400 });
+      return redirectError('Only PDF files are allowed.', 400);
     }
     if (file.size > maxBytes) {
-      return NextResponse.json(
-        { error: `File "${file.name}" is too large. Max ${safeMaxUploadMb} MB.` },
-        { status: 400 }
-      );
+      return redirectError(`File "${file.name}" is too large. Max ${safeMaxUploadMb} MB.`, 400);
     }
   }
 
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
       createdSlugs.push(slug);
     } catch (error) {
       await fs.unlink(filePath).catch(() => undefined);
-      throw error;
+      return redirectError('Upload failed while saving metadata.', 500);
     }
   }
 

@@ -3,10 +3,17 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getAdminPath, buildAdminHref } from '@/lib/adminPath';
 import { createTopic, deleteTopic, updateTopic } from '@/app/admin/pages/[pageId]/topics/actions';
+import { getAdminErrorMessage } from '@/lib/adminErrors';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TopicsPage({ params }: { params: { pageId: string } }) {
+export default async function TopicsPage({
+  params,
+  searchParams,
+}: {
+  params: { pageId: string };
+  searchParams?: { error?: string; detail?: string };
+}) {
   const pageId = Number(params.pageId);
   if (!pageId) {
     notFound();
@@ -22,9 +29,18 @@ export default async function TopicsPage({ params }: { params: { pageId: string 
   }
 
   const adminPath = getAdminPath();
+  const errorMessage = getAdminErrorMessage(searchParams?.error);
+  const errorDetail = typeof searchParams?.detail === 'string' ? searchParams.detail : '';
 
   return (
     <div className="space-y-8">
+      {errorMessage ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-semibold">Action failed</p>
+          <p>{errorMessage}</p>
+          {errorDetail ? <p className="mt-1 text-xs text-red-600">{errorDetail}</p> : null}
+        </div>
+      ) : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getAdminPath, buildAdminHref } from '@/lib/adminPath';
 import { deleteDocument } from '@/app/admin/subtopics/[subtopicId]/documents/actions';
+import { getAdminErrorMessage } from '@/lib/adminErrors';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,13 @@ const formatBytes = (bytes: number) => {
   return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-export default async function DocumentsPage({ params }: { params: { subtopicId: string } }) {
+export default async function DocumentsPage({
+  params,
+  searchParams,
+}: {
+  params: { subtopicId: string };
+  searchParams?: { error?: string; detail?: string };
+}) {
   const subtopicId = Number(params.subtopicId);
   if (!subtopicId) {
     notFound();
@@ -34,9 +41,18 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
 
   const adminPath = getAdminPath();
   const returnTo = buildAdminHref(adminPath, `/subtopics/${subtopic.id}/documents`);
+  const errorMessage = getAdminErrorMessage(searchParams?.error);
+  const errorDetail = typeof searchParams?.detail === 'string' ? searchParams.detail : '';
 
   return (
     <div className="space-y-8">
+      {errorMessage ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="font-semibold">Action failed</p>
+          <p>{errorMessage}</p>
+          {errorDetail ? <p className="mt-1 text-xs text-red-600">{errorDetail}</p> : null}
+        </div>
+      ) : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

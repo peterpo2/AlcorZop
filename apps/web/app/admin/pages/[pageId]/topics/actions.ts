@@ -6,18 +6,19 @@ import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/slugify';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { getAdminPath } from '@/lib/adminPath';
+import { getAdminErrorKey, withAdminError } from '@/lib/adminErrors';
 
 const parseOrder = (value: FormDataEntryValue | null) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
 };
 
-const redirectTo = (pageId?: number) => {
+const redirectTo = (pageId?: number, errorKey?: Parameters<typeof withAdminError>[1]) => {
   const adminPath = getAdminPath();
   if (!pageId || !Number.isFinite(pageId)) {
-    redirect(`${adminPath}/pages`);
+    redirect(withAdminError(`${adminPath}/pages`, errorKey ?? 'invalid'));
   }
-  redirect(`${adminPath}/pages/${pageId}/topics`);
+  redirect(withAdminError(`${adminPath}/pages/${pageId}/topics`, errorKey));
 };
 
 export const createTopic = async (formData: FormData) => {
@@ -25,20 +26,24 @@ export const createTopic = async (formData: FormData) => {
   const pageId = Number(formData.get('pageId'));
   const title = String(formData.get('title') || '').trim();
   if (!pageId || !title) {
-    redirectTo(pageId);
+    redirectTo(pageId, 'missing');
   }
   const slugInput = String(formData.get('slug') || '').trim();
   const slug = slugify(slugInput || title) || crypto.randomUUID();
   const order = parseOrder(formData.get('order'));
 
-  await prisma.topic.create({
-    data: {
-      title,
-      slug,
-      order,
-      page: { connect: { id: pageId } },
-    },
-  });
+  try {
+    await prisma.topic.create({
+      data: {
+        title,
+        slug,
+        order,
+        page: { connect: { id: pageId } },
+      },
+    });
+  } catch (error) {
+    redirectTo(pageId, getAdminErrorKey(error));
+  }
 
   redirectTo(pageId);
 };
@@ -49,16 +54,20 @@ export const updateTopic = async (formData: FormData) => {
   const topicId = Number(formData.get('topicId'));
   const title = String(formData.get('title') || '').trim();
   if (!pageId || !topicId || !title) {
-    redirectTo(pageId);
+    redirectTo(pageId, 'missing');
   }
   const slugInput = String(formData.get('slug') || '').trim();
   const slug = slugify(slugInput || title) || crypto.randomUUID();
   const order = parseOrder(formData.get('order'));
 
-  await prisma.topic.update({
-    where: { id: topicId },
-    data: { title, slug, order },
-  });
+  try {
+    await prisma.topic.update({
+      where: { id: topicId },
+      data: { title, slug, order },
+    });
+  } catch (error) {
+    redirectTo(pageId, getAdminErrorKey(error));
+  }
 
   redirectTo(pageId);
 };
@@ -68,9 +77,13 @@ export const deleteTopic = async (formData: FormData) => {
   const pageId = Number(formData.get('pageId'));
   const topicId = Number(formData.get('topicId'));
   if (!pageId || !topicId) {
-    redirectTo(pageId);
+    redirectTo(pageId, 'missing');
   }
 
-  await prisma.topic.delete({ where: { id: topicId } });
+  try {
+    await prisma.topic.delete({ where: { id: topicId } });
+  } catch (error) {
+    redirectTo(pageId, getAdminErrorKey(error));
+  }
   redirectTo(pageId);
 };
