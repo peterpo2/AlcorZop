@@ -122,3 +122,7 @@ Files:
 ## Developer Notes
 - This app is stateful and stores data on disk. For multi-instance deployment, replace JSON storage with a database.
 - The Flask server runs in debug mode when launched via `app.py`.
+
+
+PS C:\Popoff\AlcorZop\AlcorZop>
+python tools\import_wayback.py --csv urls.csv --sleep 0.5

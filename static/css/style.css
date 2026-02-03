@@ -45,12 +45,12 @@ a:hover {
 }
 
 .site-header {
-    background: var(--surface);
-    border: 1px solid var(--stroke);
-    border-radius: var(--radius-md);
-    padding: 18px 20px;
-    margin-bottom: 18px;
-    box-shadow: var(--shadow);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 6px 0 10px;
+    margin-bottom: 12px;
+    box-shadow: none;
 }
 
 .site-header.landing-header {
@@ -87,9 +87,13 @@ a:hover {
 }
 
 .brand-text h1 {
-    font-size: 22px;
+    font-size: 30px;
     font-weight: 700;
     letter-spacing: 0;
+}
+
+.brand-text h1 a {
+    color: var(--accent);
 }
 
 .subtitle {
@@ -368,7 +372,14 @@ a:hover {
 
 .static-profile .panel-content p {
     margin: 0 0 12px;
-    white-space: normal;
+    white-space: pre-line;
+}
+
+.static-profile .panel-content p.profile-section {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink);
+    margin-top: 18px;
 }
 
 .static-profile .panel-content p:last-child {
@@ -384,15 +395,20 @@ a:hover {
 }
 
 .profile-logo img {
-    max-width: 320px;
+    max-width: 380px;
     width: 100%;
     height: auto;
     display: block;
 }
 
 .profile-container .panel-content {
-    padding: 22px 26px 28px;
-    font-size: 15px;
+    padding: 22px 26px 80px;
+    font-size: 16px;
+}
+
+.static-profile .panel-body {
+    max-height: none;
+    min-height: 620px;
 }
 
 .pdf-attachment {

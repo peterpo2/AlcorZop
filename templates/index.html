@@ -84,7 +84,12 @@
                 </div>
                 {% endif %}
                 {% for paragraph in profile.body.split('\n\n') %}
-                  <p>{{ paragraph | e | replace('\n', '<br>') | safe }}</p>
+                  {% set trimmed = paragraph.strip() %}
+                  {% if trimmed in ['УПРАВЛЕНИЕ:', 'АДРЕС:'] %}
+                    <p class="profile-section">{{ trimmed }}</p>
+                  {% else %}
+                    <p>{{ paragraph | e }}</p>
+                  {% endif %}
                 {% endfor %}
                 {% if profile.files %}
                 <div class="files-section profile-files">

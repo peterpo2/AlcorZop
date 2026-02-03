@@ -218,8 +218,14 @@ def default_profile():
 
 def normalize_profile_body(text):
     body = (text or "")
-    body = html.unescape(body)
+    # Handle double-escaped HTML (e.g., &amp;lt;br&amp;gt;).
+    for _ in range(2):
+        unescaped = html.unescape(body)
+        if unescaped == body:
+            break
+        body = unescaped
     body = body.replace("\r\n", "\n").replace("\r", "\n")
+    body = re.sub(r"&lt;\s*br\s*/?\s*&gt;", "\n", body, flags=re.IGNORECASE)
     body = re.sub(r"<br\\s*/?>", "\n", body, flags=re.IGNORECASE)
     body = re.sub(r"</(p|h1|h2|h3|h4|h5|h6)>", "\n", body, flags=re.IGNORECASE)
     body = re.sub(r"<[^>]+>", "", body)
