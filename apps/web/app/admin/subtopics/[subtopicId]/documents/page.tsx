@@ -72,9 +72,10 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
           />
           <input
-            name="file"
+            name="files"
             type="file"
             accept="application/pdf"
+            multiple
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
             required
           />
@@ -85,6 +86,9 @@ export default async function DocumentsPage({ params }: { params: { subtopicId: 
             Upload PDF
           </button>
         </form>
+        <p className="mt-3 text-xs text-slate-500">
+          You can select multiple PDF files at once. Title and slug apply only to single-file uploads.
+        </p>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

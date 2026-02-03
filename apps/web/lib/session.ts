@@ -70,9 +70,9 @@ export const deleteSessionByToken = async (token?: string | null) => {
   await prisma.session.delete({ where: { tokenHash } }).catch(() => undefined);
 };
 
-export const getSessionCookieOptions = () => ({
+export const getSessionCookieOptions = (secureOverride?: boolean) => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: typeof secureOverride === 'boolean' ? secureOverride : process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   path: '/',
   maxAge: getSessionTtlSeconds(),

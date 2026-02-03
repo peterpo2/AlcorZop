@@ -28,7 +28,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pages = await getMenuPages().catch(() => []);
-  const requestHeaders = headers();
+  const requestHeaders = await headers();
   const isAdminRoute = requestHeaders.get('x-admin-route') === '1';
 
   return (

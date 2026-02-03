@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { getAdminPath } from '@/lib/adminPath';
 import { createSession, getSessionCookieOptions, SESSION_COOKIE } from '@/lib/session';
+import { getRequestOrigin, isSecureRequest } from '@/lib/requestOrigin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
           { status }
         );
       }
-      const url = new URL(`${getAdminPath()}/login`, request.url);
+      const url = new URL(`${getAdminPath()}/login`, getRequestOrigin(request));
       url.searchParams.set('error', reason);
       return NextResponse.redirect(url, { status: 303 });
     };
@@ -91,10 +92,10 @@ export async function POST(request: Request) {
 
     const token = await createSession(admin.id);
     const response = NextResponse.redirect(
-      new URL(isSafeRedirect(redirectTo) ? redirectTo : getAdminPath(), request.url),
+      new URL(isSafeRedirect(redirectTo) ? redirectTo : getAdminPath(), getRequestOrigin(request)),
       { status: 303 }
     );
-    response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions());
+    response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions(isSecureRequest(request)));
     return response;
   } catch (error) {
     console.error('Admin login error:', error);
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
     if (wantsJson) {
       return NextResponse.json({ error: 'Login failed.' }, { status: 500 });
     }
-    const url = new URL(`${getAdminPath()}/login`, request.url);
+    const url = new URL(`${getAdminPath()}/login`, getRequestOrigin(request));
     url.searchParams.set('error', 'server');
     return NextResponse.redirect(url, { status: 303 });
   }

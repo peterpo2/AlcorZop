@@ -4,9 +4,9 @@ import { getAdminPath, buildAdminHref } from '@/lib/adminPath';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const adminPath = getAdminPath();
-  const requestHeaders = headers();
+  const requestHeaders = await headers();
   const isLoginPage = requestHeaders.get('x-admin-login') === '1';
 
   return (
