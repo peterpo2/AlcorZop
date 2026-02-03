@@ -21,7 +21,9 @@
         <div class="header-inner">
           <div class="brand">
             <div class="brand-text">
-              <h1>МБАЛ „Рахила Ангелова“ – гр. Перник</h1>
+              <h1>
+                <a href="{{ url_for('index') }}">МБАЛ „Рахила Ангелова“ – гр. Перник</a>
+              </h1>
             </div>
           </div>
         </div>
@@ -38,20 +40,24 @@
           </button>
           {% endfor %}
         </div>
-        <div class="search-container">
-          <label class="search-label" for="search-input">Търсене</label>
-          <div class="search-field">
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Търси в тази страница..."
-              oninput="searchEntries(this.value)"
-            />
-            <span class="search-hint">Общи условия</span>
+        <div class="toolbar-side">
+          <div class="search-container">
+            <label class="search-label" for="search-input">Търсене</label>
+            <div class="search-field">
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Търси в тази страница..."
+                oninput="searchEntries(this.value)"
+              />
+            </div>
+          </div>
+          <div class="terms-container">
+            <span class="terms-label">Общи условия</span>
             <a
               href="{{ url_for('uploaded_file', filename='обществени-поръчки.pdf') }}"
               class="pdf-link"
-              style="text-decoration: underline; margin-top: 6px;"
+              style="text-decoration: underline;"
             >
               ВЪТРЕШНИ ПРАВИЛА ЗА ВЪЗЛАГАНЕ НА ОБЩЕСТВЕНИ ПОРЪЧКИ - актуализирано на 16.06.2015
             </a>
