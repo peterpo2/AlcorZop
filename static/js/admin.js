@@ -32,6 +32,7 @@ document.getElementById('add-entry-form').addEventListener('submit', async funct
     formData.append('title', document.getElementById('title').value);
     formData.append('content', document.getElementById('content').value);
     formData.append('page_id', document.getElementById('page_id').value);
+    formData.append('pdf_label', document.getElementById('pdf_label').value);
 
     const fileInput = document.getElementById('pdf_files');
     if (fileInput.files.length > 0) {
@@ -104,11 +105,19 @@ function editEntry(entryId) {
                 document.getElementById('edit-title').value = entry.title;
                 document.getElementById('edit-content').value = entry.content;
                 document.getElementById('edit-page_id').value = entry.page_id;
+                document.getElementById('edit-pdf_label').value = '';
 
                 const pdfInfo = document.getElementById('current-pdf-info');
                 const pdfFiles = Array.isArray(entry.pdf_files) ? entry.pdf_files : (entry.pdf_file ? [entry.pdf_file] : []);
                 if (pdfFiles.length > 0) {
-                    pdfInfo.textContent = `Текущи PDF файлове: ${pdfFiles.join(', ')}`;
+                    const displayNames = pdfFiles.map(item => {
+                        if (typeof item === 'string') {
+                            return item;
+                        }
+                        const label = item.label ? `${item.label} (${item.filename})` : item.filename;
+                        return label;
+                    });
+                    pdfInfo.textContent = `Текущи PDF файлове: ${displayNames.join(', ')}`;
                 } else {
                     pdfInfo.textContent = 'Няма прикачен PDF';
                 }
@@ -164,6 +173,7 @@ document.getElementById('edit-entry-form').addEventListener('submit', async func
     formData.append('title', document.getElementById('edit-title').value);
     formData.append('content', document.getElementById('edit-content').value);
     formData.append('page_id', document.getElementById('edit-page_id').value);
+    formData.append('pdf_label', document.getElementById('edit-pdf_label').value);
 
     const fileInput = document.getElementById('edit-pdf_files');
     if (fileInput.files.length > 0) {

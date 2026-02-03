@@ -43,11 +43,34 @@ def load_entries():
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             entries = json.load(f)
             for entry in entries:
-                if 'pdf_files' not in entry:
-                    legacy = entry.pop('pdf_file', None)
-                    entry['pdf_files'] = [legacy] if legacy else []
+                normalize_pdf_items(entry)
             return entries
     return []
+
+def normalize_pdf_items(entry):
+    """Normalize stored PDF files to a list of {filename, label} dicts."""
+    pdf_items = []
+    if 'pdf_files' in entry:
+        for item in entry.get('pdf_files', []):
+            if isinstance(item, dict):
+                filename = item.get('filename') or item.get('file')
+                label = item.get('label') or item.get('name')
+                if filename:
+                    pdf_items.append({'filename': filename, 'label': label or None})
+            elif isinstance(item, str):
+                pdf_items.append({'filename': item, 'label': None})
+    else:
+        legacy = entry.pop('pdf_file', None)
+        if legacy:
+            pdf_items.append({'filename': legacy, 'label': None})
+    entry['pdf_files'] = pdf_items
+
+def build_pdf_label(raw_label, index, total):
+    if not raw_label:
+        return None
+    if total <= 1:
+        return raw_label
+    return f"{raw_label} ({index})"
 
 def save_entries(entries):
     """Save entries to JSON file"""
@@ -152,12 +175,15 @@ def add_entry():
     publish_date = request.form.get('publish_date', '')
     content = request.form.get('content', '')
     page_id = int(request.form.get('page_id', 1))
+    pdf_label = request.form.get('pdf_label', '').strip()
     
     # Handle file upload
-    pdf_filenames = []
+    pdf_items = []
     files = request.files.getlist('pdf_files')
     if len([f for f in files if f and f.filename]) > MAX_PDF_FILES:
         return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
+    total_files = len([f for f in files if f and f.filename])
+    label_index = 1
     for file in files:
         if not file or file.filename == '':
             continue
@@ -168,7 +194,9 @@ def add_entry():
         pdf_filename = f"{timestamp}_{filename}"
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         file.save(save_path)
-        pdf_filenames.append(pdf_filename)
+        label = build_pdf_label(pdf_label, label_index, total_files)
+        pdf_items.append({'filename': pdf_filename, 'label': label})
+        label_index += 1
 
     new_entry = {
         'id': max([e['id'] for e in entries], default=0) + 1,
@@ -178,7 +206,7 @@ def add_entry():
         'publish_date': publish_date,
         'content': content,
         'page_id': page_id,
-        'pdf_files': pdf_filenames,
+        'pdf_files': pdf_items,
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
@@ -195,7 +223,10 @@ def delete_entry(entry_id):
     # Find and delete associated PDF file
     for entry in entries:
         if entry['id'] == entry_id and entry.get('pdf_files'):
-            for pdf_name in entry.get('pdf_files', []):
+            for pdf_item in entry.get('pdf_files', []):
+                pdf_name = pdf_item.get('filename') if isinstance(pdf_item, dict) else pdf_item
+                if not pdf_name:
+                    continue
                 pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
                 if os.path.exists(pdf_path):
                     os.remove(pdf_path)
@@ -228,9 +259,10 @@ def update_entry(entry_id):
         publish_date = request.form.get('publish_date', '')
         content = request.form.get('content', '')
         page_id = int(request.form.get('page_id', 1))
+        pdf_label = request.form.get('pdf_label', '').strip()
         
         # Handle file upload
-        pdf_filenames = []
+        pdf_items = []
         files = request.files.getlist('pdf_files')
         existing_count = 0
         for entry in entries:
@@ -240,6 +272,8 @@ def update_entry(entry_id):
         incoming_count = len([f for f in files if f and f.filename])
         if existing_count + incoming_count > MAX_PDF_FILES:
             return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
+        total_files = len([f for f in files if f and f.filename])
+        label_index = 1
         for file in files:
             if not file or file.filename == '':
                 continue
@@ -250,7 +284,9 @@ def update_entry(entry_id):
             pdf_filename = f"{timestamp}_{filename}"
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
             file.save(save_path)
-            pdf_filenames.append(pdf_filename)
+            label = build_pdf_label(pdf_label, label_index, total_files)
+            pdf_items.append({'filename': pdf_filename, 'label': label})
+            label_index += 1
     
     for entry in entries:
         if entry['id'] == entry_id:
@@ -261,8 +297,8 @@ def update_entry(entry_id):
             entry['publish_date'] = publish_date
             entry['content'] = content
             entry['page_id'] = page_id
-            if pdf_filenames:
-                entry['pdf_files'] = entry.get('pdf_files', []) + pdf_filenames
+            if pdf_items:
+                entry['pdf_files'] = entry.get('pdf_files', []) + pdf_items
             break
     
     save_entries(entries)
@@ -274,7 +310,10 @@ def delete_entry_pdfs(entry_id):
     entries = load_entries()
     for entry in entries:
         if entry['id'] == entry_id:
-            for pdf_name in entry.get('pdf_files', []):
+            for pdf_item in entry.get('pdf_files', []):
+                pdf_name = pdf_item.get('filename') if isinstance(pdf_item, dict) else pdf_item
+                if not pdf_name:
+                    continue
                 pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_name)
                 if os.path.exists(pdf_path):
                     os.remove(pdf_path)

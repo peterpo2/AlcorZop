@@ -74,11 +74,15 @@ function renderEntries(entries) {
                         <p>${entry.content}</p>
                         ${(entry.pdf_files && entry.pdf_files.length) ? `
                             <div class="pdf-attachment">
-                                ${entry.pdf_files.map(file => `
-                                    <a href="/uploads/${file}" target="_blank" class="pdf-link">
-                                        Преглед на PDF документ
-                                    </a>
-                                `).join('')}
+                                ${entry.pdf_files.map(file => {
+                                    const filename = typeof file === 'string' ? file : file.filename;
+                                    const label = typeof file === 'string' ? file : (file.label || file.filename);
+                                    return `
+                                        <a href="/pdf/${filename}" class="pdf-link">
+                                            ${label}
+                                        </a>
+                                    `;
+                                }).join('')}
                             </div>` : ''
                         }
                         <small class="entry-date">Публикувано: ${entry.date}</small>

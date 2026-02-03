@@ -93,11 +93,14 @@
                 <div class="pdf-attachment">
                   {% for pdf_name in pdf_files %}
                   <a
-                    href="{{ url_for('pdf_viewer', filename=pdf_name) }}"
-                    target="_blank" rel="noopener"
+                    href="{{ url_for('pdf_viewer', filename=pdf_name.filename if pdf_name is mapping else pdf_name) }}"
                     class="pdf-link"
                   >
-                    Преглед на PDF документ
+                    {% if pdf_name is mapping %}
+                    {{ pdf_name.label or pdf_name.filename }}
+                    {% else %}
+                    {{ pdf_name }}
+                    {% endif %}
                   </a>
                   {% endfor %}
                 </div>
