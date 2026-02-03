@@ -1,16 +1,17 @@
 :root {
-    --bg: #f4f6fb;
-    --ink: #0f172a;
-    --muted: #5b6472;
-    --accent: #f97316;
-    --accent-strong: #ea580c;
-    --link: #2563eb;
+    --bg: #f7f7f7;
+    --ink: #1f1f1f;
+    --muted: #5a5a5a;
+    --accent: #c6262d;
+    --accent-strong: #a61f25;
+    --accent-soft: #f5e7e8;
+    --link: #1f5ea8;
     --surface: #ffffff;
-    --stroke: #e2e8f0;
-    --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    --radius-lg: 18px;
-    --radius-md: 14px;
-    --radius-sm: 10px;
+    --stroke: #dedede;
+    --shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    --radius-lg: 12px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
 }
 
 * {
@@ -20,15 +21,12 @@
 }
 
 body {
-    font-family: "Sora", "Segoe UI", "Arial", sans-serif;
-    background:
-        radial-gradient(1200px 600px at 12% -20%, rgba(255, 247, 237, 0.9) 0%, rgba(255, 247, 237, 0) 60%),
-        radial-gradient(900px 520px at 90% -10%, rgba(219, 234, 254, 0.9) 0%, rgba(219, 234, 254, 0) 55%),
-        var(--bg);
+    font-family: "Segoe UI", "Arial", sans-serif;
+    background: var(--bg);
     color: var(--ink);
-    line-height: 1.65;
+    line-height: 1.6;
     min-height: 100vh;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 a {
@@ -48,11 +46,16 @@ a:hover {
 
 .site-header {
     background: var(--surface);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
     border-radius: var(--radius-md);
-    padding: 20px 22px;
-    margin-bottom: 20px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
     box-shadow: var(--shadow);
+}
+
+.site-header.landing-header {
+    padding: 14px 18px;
+    border-left: 4px solid var(--accent);
 }
 
 .header-inner {
@@ -75,23 +78,23 @@ a:hover {
     justify-content: center;
     width: 44px;
     height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f97316, #fb923c);
+    border-radius: 6px;
+    background: var(--accent);
     color: #ffffff;
     font-weight: 700;
     letter-spacing: 0.04em;
-    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.25);
+    box-shadow: 0 8px 18px rgba(211, 32, 39, 0.25);
 }
 
 .brand-text h1 {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
 }
 
 .subtitle {
     color: var(--muted);
-    font-size: 14px;
+    font-size: 12px;
     max-width: 640px;
 }
 
@@ -117,8 +120,8 @@ a:hover {
 
 .nav-btn,
 .page-btn {
-    padding: 10px 18px;
-    border-radius: 999px;
+    padding: 9px 14px;
+    border-radius: 6px;
     background: #ffffff;
     border: 1px solid var(--stroke);
     color: var(--ink);
@@ -134,9 +137,9 @@ a:hover {
 
 .nav-btn.active,
 .page-btn.active {
-    background: var(--ink);
+    background: var(--accent);
     color: #ffffff;
-    border-color: var(--ink);
+    border-color: var(--accent-strong);
 }
 
 .toolbar {
@@ -151,24 +154,41 @@ a:hover {
     flex-wrap: wrap;
     gap: 8px;
     padding: 10px;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(37, 99, 235, 0.15));
+    background: #f3f3f3;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
 }
 
 .page-navigation .page-btn + .page-btn {
     border-left: none;
 }
 
+.page-navigation .page-btn {
+    background: #ffffff;
+    border-color: var(--stroke);
+    color: var(--ink);
+}
+
+.page-navigation .page-btn:hover {
+    background: #f5f5f5;
+    border-color: #cfcfcf;
+}
+
+.page-navigation .page-btn.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent-strong);
+}
+
 .search-container {
     background: var(--surface);
     padding: 14px 16px 16px;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: var(--shadow);
 }
 
 .search-label {
@@ -187,10 +207,10 @@ a:hover {
 
 #search-input {
     width: 100%;
-    padding: 11px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(15, 23, 42, 0.16);
-    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #bfbfbf;
+    font-size: 13px;
     font-family: inherit;
     transition: border-color 0.2s ease;
 }
@@ -221,15 +241,15 @@ a:hover {
 .panel {
     background: var(--surface);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
     overflow: hidden;
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--shadow);
 }
 
 .panel-heading {
-    background: linear-gradient(135deg, #f97316, #fb923c);
+    background: var(--accent);
     color: #fff;
-    padding: 10px 14px;
+    padding: 9px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -309,9 +329,9 @@ a:hover {
 .content-card {
     background: var(--surface);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    padding: 22px;
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
+    padding: 20px;
+    box-shadow: var(--shadow);
 }
 
 .landing-content {
@@ -329,8 +349,8 @@ a:hover {
     background: var(--surface);
     padding: 18px;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
+    box-shadow: var(--shadow);
 }
 
 .admin-section h2 {
@@ -353,11 +373,11 @@ a:hover {
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: 11px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(15, 23, 42, 0.16);
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #bfbfbf;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .form-group textarea {
@@ -391,9 +411,34 @@ a:hover {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #f97316, #fb923c);
+    background: var(--accent);
     color: #fff;
-    box-shadow: 0 12px 20px rgba(249, 115, 22, 0.24);
+    box-shadow: 0 10px 18px rgba(198, 38, 45, 0.22);
+}
+
+.landing-main {
+    grid-template-columns: 1.7fr 0.9fr;
+    align-items: start;
+}
+
+.landing-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.landing-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f5ea8;
+    border: 2px solid #2a63b8;
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.profile-panel .panel-content h4 {
+    margin-top: 6px;
 }
 
 .btn-secondary {
@@ -425,9 +470,9 @@ a:hover {
     align-items: center;
     padding: 14px;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
     background: #ffffff;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
 }
 
 .entry-info h4 {
@@ -441,9 +486,9 @@ a:hover {
 .entry-page-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(37, 99, 235, 0.12);
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f1f1f1;
     color: var(--ink);
     font-size: 12px;
     font-weight: 600;
@@ -474,7 +519,7 @@ a:hover {
     gap: 12px;
     padding: 12px 14px;
     border-radius: var(--radius-sm);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--stroke);
     background: #ffffff;
 }
 
@@ -514,7 +559,7 @@ a:hover {
     max-width: 600px;
     width: 90%;
     box-shadow: var(--shadow);
-    border: 1px solid rgba(15, 23, 42, 0.1);
+    border: 1px solid var(--stroke);
 }
 
 .close {
@@ -525,6 +570,10 @@ a:hover {
 
 @media (max-width: 960px) {
     .toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-main {
         grid-template-columns: 1fr;
     }
 }

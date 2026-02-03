@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
@@ -12,36 +12,50 @@
 <body>
 <div class="app-shell">
 
-    <header class="site-header">
-        <div class="header-inner">
-            <div class="brand">
-                <span class="brand-mark">AZ</span>
-                <div class="brand-text">
-                    <h1>{{ landing.title }}</h1>
-                    <p class="subtitle">Структурирана информация, ясна навигация и бърз достъп</p>
-                </div>
-            </div>
-            <nav class="header-actions">
-                {% for page in pages %}
-                <button class="nav-btn" onclick="location.href='/page/{{ page.id }}'">
-                    {{ page.name }}
-                </button>
-                {% endfor %}
-            </nav>
-        </div>
+    <header class="site-header landing-header">
+        <div class="landing-title">МБАЛ „Рахила Ангелова“ – гр.Перник</div>
     </header>
 
-    <main class="landing-main">
-        <section class="content-card landing-content">
-            {{ landing.content | safe }}
-        </section>
+    <section class="page-navigation">
+        {% for page in pages %}
+        <button class="page-btn" onclick="location.href='/page/{{ page.id }}'">
+            {{ page.name }}
+        </button>
+        {% endfor %}
+    </section>
 
-        <section class="content-card terms">
-            <h2>{{ terms.title }}</h2>
-            <div class="terms-content">
-                {{ terms.content | safe }}
+    <main class="landing-main">
+        <section class="panel profile-panel">
+            <div class="panel-heading">
+                <h3 class="panel-title">Профил на купувача - МБАЛ „Рахила Ангелова“ – гр.Перник</h3>
+            </div>
+            <div class="panel-body">
+                <div class="panel-content landing-content">
+                    {{ landing.content | safe }}
+                </div>
             </div>
         </section>
+
+        <aside class="landing-side">
+            <section class="search-container">
+                <label class="search-label" for="landing-search">Търсене</label>
+                <div class="search-field">
+                    <input
+                        type="text"
+                        id="landing-search"
+                        placeholder="Търсене в профила..."
+                    >
+                    <span class="search-hint">Минимум 2 символа</span>
+                </div>
+            </section>
+
+            <section class="content-card terms">
+                <h2>{{ terms.title }}</h2>
+                <div class="terms-content">
+                    {{ terms.content | safe }}
+                </div>
+            </section>
+        </aside>
     </main>
 
 </div>
