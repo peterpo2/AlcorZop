@@ -454,6 +454,26 @@ a:hover {
     border-color: var(--accent);
 }
 
+.date-field {
+    position: relative;
+}
+
+.date-placeholder {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.date-field.has-value .date-placeholder,
+.date-field:focus-within .date-placeholder {
+    opacity: 0;
+}
+
 .form-help {
     display: block;
     margin-top: 6px;

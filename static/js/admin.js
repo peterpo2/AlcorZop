@@ -1,4 +1,27 @@
 // Handle form submission for adding new entry with file upload
+function syncDateField(field) {
+    const input = field.querySelector('input');
+    if (!input) {
+        return;
+    }
+    field.classList.toggle('has-value', Boolean(input.value));
+}
+
+function setupDateFields() {
+    document.querySelectorAll('.date-field').forEach(field => {
+        const input = field.querySelector('input');
+        if (!input) {
+            return;
+        }
+        const update = () => syncDateField(field);
+        input.addEventListener('input', update);
+        input.addEventListener('change', update);
+        update();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', setupDateFields);
+
 document.getElementById('add-entry-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -75,7 +98,9 @@ function editEntry(entryId) {
                 document.getElementById('edit-id').value = entry.id;
                 document.getElementById('edit-heading').value = entry.heading;
                 document.getElementById('edit-aop_number').value = entry.aop_number || '';
-                document.getElementById('edit-publish_date').value = entry.publish_date || '';
+                const editPublishDate = document.getElementById('edit-publish_date');
+                editPublishDate.value = entry.publish_date || '';
+                editPublishDate.dispatchEvent(new Event('change', { bubbles: true }));
                 document.getElementById('edit-title').value = entry.title;
                 document.getElementById('edit-content').value = entry.content;
                 document.getElementById('edit-page_id').value = entry.page_id;

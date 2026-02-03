@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Изход панел - Управление</title>
+    <title>Админ панел</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,10 +14,8 @@
         <header class="site-header">
             <div class="header-inner">
                 <div class="brand">
-                    <span class="brand-mark">AZ</span>
-                    <div class="brand-text">
-                        <h1>Изход панел</h1>
-                        <p class="subtitle">Управление на страници, записи и документи</p>
+                                        <div class="brand-text">
+                        <h1>Админ панел</h1>
                     </div>
                 </div>
                 <nav class="header-actions">
@@ -66,8 +64,11 @@
                     <input type="text" id="aop_number" name="aop_number">
                 </div>
                 <div class="form-group">
-                    <label for="publish_date">Дата на публикуване</label>
-                    <input type="datetime-local" id="publish_date" name="publish_date">
+                    <label for="publish_date">Въведете дата</label>
+                    <div class="date-field">
+                        <input type="date" id="publish_date" name="publish_date" class="date-input">
+                        <span class="date-placeholder">дд.ММ.гггг</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="title">Подзаглавие</label>
@@ -160,8 +161,11 @@
                     <input type="text" id="edit-aop_number" name="aop_number">
                 </div>
                 <div class="form-group">
-                    <label for="edit-publish_date">Дата на публикуване</label>
-                    <input type="datetime-local" id="edit-publish_date" name="publish_date">
+                    <label for="edit-publish_date">Въведете дата</label>
+                    <div class="date-field">
+                        <input type="date" id="edit-publish_date" name="publish_date" class="date-input">
+                        <span class="date-placeholder">дд.ММ.гггг</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="edit-title">Подзаглавие</label>
@@ -174,7 +178,7 @@
                 <div class="form-group">
                     <label for="edit-pdf_files">Смяна на PDF (по избор)</label>
                     <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help" id="current-pdf-info">?????????? ??????: 32MB, ?? 5 PDF</small>
+                    <small class="form-help" id="current-pdf-info">??дд.ММ.гггг??: 32MB, ?? 5 PDF</small>
                 </div>
                 <button type="submit" class="btn btn-primary">Обнови</button>
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Откажи</button>
