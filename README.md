@@ -29,6 +29,19 @@ python app.py
    - Home page: http://localhost:5000
    - Admin page: http://localhost:5000/admin
 
+## Docker
+
+1. Build and start:
+```bash
+docker compose up --build
+```
+
+2. Open:
+   - Home page: http://localhost:5000
+   - Admin page: http://localhost:5000/admin
+
+Data and uploads are persisted via bind mounts in `docker-compose.yml`.
+
 ## Usage
 
 ### Viewing Entries (Home Page)
