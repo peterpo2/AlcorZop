@@ -1,20 +1,66 @@
-// Function to toggle panel collapse/expand
+﻿// Function to toggle panel collapse/expand
+let openedAll = false;
+
 function togglePanel(panelId) {
-    const panelBody = document.getElementById(`panel-${panelId}`);
+    const panelBody = document.getElementById(`panel-body-${panelId}`);
+    if (!panelBody) {
+        return;
+    }
     const panelHeading = panelBody.previousElementSibling;
 
-    if (panelBody.classList.contains('collapsed')) {
+    const isCollapsed = panelBody.classList.contains('collapsed');
+    if (isCollapsed) {
         panelBody.classList.remove('collapsed');
-        panelHeading.classList.remove('collapsed');
+        if (panelHeading) {
+            panelHeading.classList.remove('collapsed');
+        }
     } else {
         panelBody.classList.add('collapsed');
-        panelHeading.classList.add('collapsed');
+        if (panelHeading) {
+            panelHeading.classList.add('collapsed');
+        }
+    }
+    syncToggleAllState();
+}
+
+function setAllPanels(open) {
+    const bodies = document.querySelectorAll('.panel-body');
+    bodies.forEach(body => {
+        const heading = body.previousElementSibling;
+        if (open) {
+            body.classList.remove('collapsed');
+            if (heading) {
+                heading.classList.remove('collapsed');
+            }
+        } else {
+            body.classList.add('collapsed');
+            if (heading) {
+                heading.classList.add('collapsed');
+            }
+        }
+    });
+}
+
+function syncToggleAllState() {
+    const bodies = Array.from(document.querySelectorAll('.panel-body'));
+    const allOpen = bodies.length > 0 && bodies.every(body => !body.classList.contains('collapsed'));
+    openedAll = allOpen;
+    const btn = document.getElementById('toggle-all-btn');
+    if (btn) {
+        btn.textContent = openedAll ? 'Скрий всички' : 'Покажи всички';
     }
 }
 
-// Initialize all panels as expanded on page load
+function toggleAllPanels() {
+    openedAll = !openedAll;
+    setAllPanels(openedAll);
+    syncToggleAllState();
+}
+
+// Initialize all panels as collapsed on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded - panels initialized');
+    setAllPanels(false);
+    syncToggleAllState();
 });
 
 let searchTimeout = null;
@@ -56,39 +102,72 @@ function renderEntries(entries) {
     }
 
     entries.forEach(entry => {
+        const title = entry.title || entry.heading || '';
+        const files = Array.isArray(entry.files) ? entry.files : [];
+        const pdfFiles = Array.isArray(entry.pdf_files) ? entry.pdf_files : [];
+        const pdfMap = new Map();
+        pdfFiles.forEach(file => {
+            const name = file.name || file.url || '';
+            const url = file.url || '';
+            if (name && url) {
+                pdfMap.set(name, url);
+            }
+        });
+
+        const filesHtml = files.length ? `
+            <ul class="files">
+                ${files.map(file => {
+                    const name = file.name || file.url || '';
+                    const link = pdfMap.get(name);
+                    return `
+                        <li>
+                            ${link ? `<a href="${link}" target="_blank" rel="noopener">${name}</a>` : `${name}`}
+                            ${file.published_at ? `<span class="file-meta"> — Публикувано на: ${file.published_at}</span>` : ''}
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        ` : (pdfFiles.length ? `
+            <ul class="files">
+                ${pdfFiles.map(file => {
+                    const name = file.name || file.url || '';
+                    const url = file.url || '';
+                    return `
+                        <li>
+                            <a href="${url}" target="_blank" rel="noopener">${name}</a>
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        ` : `<p class="no-files">Няма прикачени файлове.</p>`);
+
         container.insertAdjacentHTML('beforeend', `
             <div class="panel">
-                <div class="panel-heading" onclick="togglePanel(${entry.id})">
-                    <h3 class="panel-title">${entry.heading}</h3>
-                    <span class="toggle-icon" aria-hidden="true">Ў</span>
+                <div class="panel-heading collapsed" onclick="togglePanel(${entry.id})">
+                    <h3 class="panel-title">${title}</h3>
+                    <span class="toggle-icon" aria-hidden="true">▾</span>
                 </div>
-                <div class="panel-body" id="panel-${entry.id}">
+                <div class="panel-body collapsed" id="panel-body-${entry.id}">
                     <div class="panel-content">
-                        ${(entry.aop_number || entry.publish_date) ? `
+                        ${(entry.aop_number || entry.publish_date || entry.internal_number) ? `
                             <div class="panel-meta">
-                                ${entry.aop_number ? `<p><strong>Номер от АОП:</strong> ${entry.aop_number}</p>` : ''}
-                                ${entry.publish_date ? `<p><strong>Дата на публикуване:</strong> ${entry.publish_date}</p>` : ''}
+                                ${entry.publish_date ? `<div class="meta-row"><strong>Дата на публикуване:</strong> ${entry.publish_date}</div>` : ''}
+                                ${entry.aop_number ? `<div class="meta-row"><strong>Номер от АОП:</strong> ${entry.aop_number}</div>` : ''}
+                                ${entry.internal_number ? `<div class="meta-row"><strong>Вътрешен номер:</strong> ${entry.internal_number}</div>` : ''}
                             </div>
                         ` : ''}
-                        <h4>${entry.title}</h4>
-                        <p>${entry.content}</p>
-                        ${(entry.pdf_files && entry.pdf_files.length) ? `
-                            <div class="pdf-attachment">
-                                ${entry.pdf_files.map(file => {
-                                    const filename = typeof file === 'string' ? file : file.filename;
-                                    const label = typeof file === 'string' ? file : (file.label || file.filename);
-                                    return `
-                                        <a href="/pdf/${filename}" class="pdf-link" target="_blank" rel="noopener">
-                                            ${label}
-                                        </a>
-                                    `;
-                                }).join('')}
-                            </div>` : ''
-                        }
+                        ${entry.content ? `<pre class="entry-content">${entry.content}</pre>` : ''}
+                        <div class="files-section">
+                            <h4>Файлове</h4>
+                            ${filesHtml}
+                        </div>
                         <small class="entry-date">Публикувано: ${entry.date}</small>
                     </div>
                 </div>
             </div>
         `);
     });
-}
+
+    setAllPanels(false);
+    syncToggleAllState();
+}

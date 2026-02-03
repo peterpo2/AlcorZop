@@ -263,6 +263,12 @@ a:hover {
     gap: 16px;
 }
 
+.panel-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
 .panel {
     background: var(--surface);
     border-radius: var(--radius-md);
@@ -318,6 +324,24 @@ a:hover {
 .panel-content p {
     color: var(--muted);
     white-space: pre-wrap;
+}
+
+.files-section {
+    margin-top: 12px;
+}
+
+.files {
+    margin: 8px 0 0 18px;
+    color: var(--ink);
+}
+
+.files li {
+    margin-bottom: 6px;
+}
+
+.file-meta {
+    color: var(--muted);
+    font-size: 12px;
 }
 
 .static-profile .panel-heading {
@@ -687,4 +711,17 @@ a:hover {
     .entry-actions .btn {
         flex: 1;
     }
+}
+.entry-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.entry-heading {
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.meta-row {
+  margin-bottom: 6px;
 }

@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,10 +21,21 @@ except Exception:
     HTML_PARSER = "html.parser"
 
 DATE_RE = re.compile(r"([0-9]{2}\.[0-9]{2}\.[0-9]{4})")
+DATE_DOTTED_RE = re.compile(r"\b[0-9]{2}\.[0-9]{2}\.[0-9]{4}\b")
 LABEL_PUBLISH_DATE = "Началната дата:"
 LABEL_AOP = "Уникален номер в регистъра на АОП:"
 LABEL_INTERNAL = "Вътрешен номер в системата:"
 PUBLISHED_RE = re.compile(r"Публикувано на\s*:\s*(.+)")
+
+ALLOWED_CONTENT_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/octet-stream",
+}
+ALLOWED_EXTENSIONS = (".pdf", ".doc", ".docx", ".xls", ".xlsx")
 
 
 @dataclass
@@ -76,6 +87,30 @@ class Importer:
         except requests.RequestException as exc:
             self.log(f"  !! Request failed for {url}: {exc}")
             return None
+
+    def head_or_get(self, url: str) -> Optional[requests.Response]:
+        try:
+            resp = self.session.head(url, timeout=self.timeout, allow_redirects=True)
+            if resp.status_code == 405 or resp.status_code >= 400:
+                resp = self.session.get(url, timeout=self.timeout, stream=True, allow_redirects=True)
+            return resp
+        except requests.RequestException:
+            try:
+                resp = self.session.get(url, timeout=self.timeout, stream=True, allow_redirects=True)
+                return resp
+            except requests.RequestException:
+                return None
+
+    def is_working_file_url(self, url: str) -> bool:
+        resp = self.head_or_get(url)
+        self.sleep()
+        if not resp or resp.status_code != 200:
+            return False
+        content_type = (resp.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        final_url = resp.url or url
+        if content_type in ALLOWED_CONTENT_TYPES:
+            return True
+        return final_url.lower().endswith(ALLOWED_EXTENSIONS)
 
     def get_pages(self) -> List[Dict]:
         if self.pages_cache is not None:
@@ -147,6 +182,19 @@ class Importer:
     def normalize_text(self, text: str) -> str:
         return " ".join((text or "").split())
 
+    def normalize_for_compare(self, text: str) -> str:
+        return self.normalize_text(text).casefold()
+
+    def clean_aop_number(self, value: str) -> str:
+        if not value:
+            return ""
+        if DATE_DOTTED_RE.search(value):
+            return ""
+        cleaned = "".join(ch for ch in value if ch.isdigit() or ch in "/-")
+        if not any(ch.isdigit() for ch in cleaned):
+            return ""
+        return cleaned
+
     def extract_labeled_value(self, lines: List[str], label: str) -> Tuple[bool, str]:
         for idx, line in enumerate(lines):
             if label in line:
@@ -167,7 +215,16 @@ class Importer:
             return match.group(1)
         return ""
 
-    def extract_files(self, body_el) -> List[Dict]:
+    def normalize_file_url(self, href: str, base_url: str) -> str:
+        if not href:
+            return ""
+        if href.startswith("/web/"):
+            return f"https://web.archive.org{href}"
+        if href.startswith("http://") or href.startswith("https://"):
+            return href
+        return urljoin(base_url, href)
+
+    def extract_files(self, body_el, base_url: str) -> List[Dict]:
         files = []
         label = None
         for tag in body_el.find_all(["strong", "b"]):
@@ -212,7 +269,8 @@ class Importer:
             if not link:
                 continue
             name = self.normalize_text(link.get_text(" ", strip=True))
-            url = (link.get("href") or "").strip()
+            raw_url = (link.get("href") or "").strip()
+            url = self.normalize_file_url(raw_url, base_url)
             li_text = self.normalize_text(li.get_text(" ", strip=True))
             published = ""
             match = PUBLISHED_RE.search(li_text)
@@ -243,11 +301,30 @@ class Importer:
         body_text = body_el.get_text("\n", strip=True)
         lines = [self.normalize_text(line) for line in body_text.splitlines() if self.normalize_text(line)]
         publish_date = self.extract_publish_date(lines)
-        _, aop_number = self.extract_labeled_value(lines, LABEL_AOP)
+        _, aop_raw = self.extract_labeled_value(lines, LABEL_AOP)
+        aop_number = self.clean_aop_number(aop_raw)
         _, internal_number = self.extract_labeled_value(lines, LABEL_INTERNAL)
-        files = self.extract_files(body_el)
+        files = self.extract_files(body_el, source_url)
 
         heading = title
+        if self.normalize_for_compare(heading) == self.normalize_for_compare(title):
+            heading = ""
+
+        content_lines = []
+        if files:
+            content_lines.append("Файлове:")
+            for f in files:
+                name = f.get("name") or ""
+                if name:
+                    content_lines.append(f"- {name}")
+        content = "\n".join(content_lines)
+
+        pdf_files = []
+        for f in files:
+            url = f.get("url") or ""
+            name = f.get("name") or url
+            if url and self.is_working_file_url(url):
+                pdf_files.append({"name": name, "url": url})
 
         entry = {
             "title": title,
@@ -256,7 +333,8 @@ class Importer:
             "aop_number": aop_number,
             "internal_number": internal_number,
             "files": files,
-            "content": "",
+            "content": content,
+            "pdf_files": pdf_files,
             "source_url": source_url,
             "imported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -270,6 +348,7 @@ class Importer:
             "aop_number",
             "internal_number",
             "files",
+            "pdf_files",
             "source_url",
             "imported_at",
             "content",
@@ -292,6 +371,17 @@ class Importer:
                 if k not in item:
                     self.log(f"  !! Validation failed: file item missing '{k}'")
                     return False
+        if not isinstance(entry.get("pdf_files"), list):
+            self.log("  !! Validation failed: pdf_files is not a list")
+            return False
+        for item in entry.get("pdf_files", []):
+            if not isinstance(item, dict):
+                self.log("  !! Validation failed: pdf_files item is not a dict")
+                return False
+            for k in ["name", "url"]:
+                if k not in item:
+                    self.log(f"  !! Validation failed: pdf_files item missing '{k}'")
+                    return False
         return True
 
     def post_entry(self, page_id: int, entry: Dict) -> Optional[Dict]:
@@ -303,6 +393,7 @@ class Importer:
             "internal_number": entry.get("internal_number", ""),
             "content": entry.get("content", ""),
             "files": json.dumps(entry.get("files", []), ensure_ascii=False),
+            "pdf_links": json.dumps(entry.get("pdf_files", []), ensure_ascii=False),
             "source_url": entry.get("source_url", ""),
             "imported_at": entry.get("imported_at", ""),
             "page_id": str(page_id),

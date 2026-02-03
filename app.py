@@ -4,6 +4,7 @@ from flask import Response
 import json
 import os
 from datetime import datetime
+import re
 from werkzeug.utils import secure_filename
 
 
@@ -43,28 +44,38 @@ def load_entries():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             entries = json.load(f)
+            changed = False
             for entry in entries:
                 normalize_pdf_items(entry)
-                normalize_files_items(entry)
+                if cleanup_entry_fields(entry):
+                    changed = True
+            if changed:
+                save_entries(entries)
             return entries
     return []
 
 def normalize_pdf_items(entry):
-    """Normalize stored PDF files to a list of {filename, label} dicts."""
+    """Normalize stored PDF files to a list of dicts.
+
+    Supports legacy uploads (filename/label) and Wayback links (name/url).
+    """
     pdf_items = []
     if 'pdf_files' in entry:
         for item in entry.get('pdf_files', []):
             if isinstance(item, dict):
+                url = item.get('url') or ''
+                name = item.get('name') or item.get('label') or ''
                 filename = item.get('filename') or item.get('file')
-                label = item.get('label') or item.get('name')
-                if filename:
-                    pdf_items.append({'filename': filename, 'label': label or None})
+                if url or name:
+                    pdf_items.append({'name': name, 'url': url})
+                elif filename:
+                    pdf_items.append({'name': name or filename, 'url': f"/pdf/{filename}"})
             elif isinstance(item, str):
-                pdf_items.append({'filename': item, 'label': None})
+                pdf_items.append({'name': item, 'url': f"/pdf/{item}"})
     else:
         legacy = entry.pop('pdf_file', None)
         if legacy:
-            pdf_items.append({'filename': legacy, 'label': None})
+            pdf_items.append({'name': legacy, 'url': f"/pdf/{legacy}"})
     entry['pdf_files'] = pdf_items
 
 def normalize_files_items(entry):
@@ -92,6 +103,33 @@ def build_pdf_label(raw_label, index, total):
         return raw_label
     return f"{raw_label} ({index})"
 
+def normalize_text(value):
+    return " ".join((value or "").split())
+
+def normalize_for_compare(value):
+    return normalize_text(value).casefold()
+
+def cleanup_entry_fields(entry):
+    changed = False
+    aop_number = entry.get('aop_number', '')
+    if aop_number:
+        date_like = re.search(r"\\b[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}\\b", aop_number)
+        if date_like or not any(ch.isdigit() for ch in aop_number):
+            entry['aop_number'] = ''
+            changed = True
+
+    title = entry.get('title', '')
+    heading = entry.get('heading', '')
+    if title and heading and normalize_for_compare(title) == normalize_for_compare(heading):
+        entry['heading'] = ''
+        changed = True
+
+    before_files = entry.get('files')
+    normalize_files_items(entry)
+    if entry.get('files') != before_files:
+        changed = True
+    return changed
+
 def normalize_incoming_files(items):
     files = []
     for item in items or []:
@@ -107,6 +145,17 @@ def normalize_incoming_files(items):
                 'published_at': published
             })
     return files
+
+def normalize_incoming_pdf_links(items):
+    links = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        name = item.get('name') or item.get('label') or ''
+        url = item.get('url') or ''
+        if name or url:
+            links.append({'name': name, 'url': url})
+    return links
 
 def save_entries(entries):
     """Save entries to JSON file"""
@@ -220,6 +269,7 @@ def add_entry():
     imported_at = request.form.get('imported_at', '')
     content = request.form.get('content', '')
     files_raw = request.form.get('files', '')
+    pdf_links_raw = request.form.get('pdf_links', '')
     page_id = int(request.form.get('page_id', 1))
     pdf_label = request.form.get('pdf_label', '').strip()
     
@@ -254,6 +304,22 @@ def add_entry():
             files_list = []
     files_list = normalize_incoming_files(files_list)
 
+    pdf_links = []
+    if pdf_links_raw:
+        try:
+            pdf_links = json.loads(pdf_links_raw)
+            if not isinstance(pdf_links, list):
+                pdf_links = []
+        except json.JSONDecodeError:
+            pdf_links = []
+    pdf_links = normalize_incoming_pdf_links(pdf_links)
+
+    for item in pdf_items:
+        filename = item.get('filename')
+        label = item.get('label') or filename
+        if filename:
+            pdf_links.append({'name': label, 'url': f"/pdf/{filename}"})
+
     new_entry = {
         'id': max([e['id'] for e in entries], default=0) + 1,
         'title': title,
@@ -264,12 +330,13 @@ def add_entry():
         'internal_number': internal_number,
         'content': content,
         'files': files_list,
+        'pdf_files': pdf_links,
         'source_url': source_url,
         'imported_at': imported_at,
         'page_id': page_id,
-        'pdf_files': pdf_items,
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
+    cleanup_entry_fields(new_entry)
     
     entries.append(new_entry)
     save_entries(entries)
@@ -313,7 +380,9 @@ def update_entry(entry_id):
         start_date = data.get('start_date', '')
         internal_number = data.get('internal_number', '')
         content = data.get('content', '')
-        files_list = data.get('files', [])
+        files_list = normalize_incoming_files(data.get('files', []))
+        pdf_links_provided = 'pdf_links' in data
+        pdf_links = normalize_incoming_pdf_links(data.get('pdf_links', []))
         source_url = data.get('source_url', '')
         imported_at = data.get('imported_at', '')
         page_id = data.get('page_id', 1)
@@ -327,15 +396,26 @@ def update_entry(entry_id):
         internal_number = request.form.get('internal_number', '')
         content = request.form.get('content', '')
         files_raw = request.form.get('files', '')
-    files_list = []
-    if files_raw:
-        try:
-            files_list = json.loads(files_raw)
-            if not isinstance(files_list, list):
+        pdf_links_raw = request.form.get('pdf_links', '')
+        pdf_links_provided = bool(pdf_links_raw)
+        files_list = []
+        if files_raw:
+            try:
+                files_list = json.loads(files_raw)
+                if not isinstance(files_list, list):
+                    files_list = []
+            except json.JSONDecodeError:
                 files_list = []
-        except json.JSONDecodeError:
-            files_list = []
         files_list = normalize_incoming_files(files_list)
+        pdf_links = []
+        if pdf_links_raw:
+            try:
+                pdf_links = json.loads(pdf_links_raw)
+                if not isinstance(pdf_links, list):
+                    pdf_links = []
+            except json.JSONDecodeError:
+                pdf_links = []
+        pdf_links = normalize_incoming_pdf_links(pdf_links)
         source_url = request.form.get('source_url', '')
         imported_at = request.form.get('imported_at', '')
         page_id = int(request.form.get('page_id', 1))
@@ -379,11 +459,20 @@ def update_entry(entry_id):
             entry['internal_number'] = internal_number
             entry['content'] = content
             entry['files'] = files_list
+            if pdf_links_provided:
+                entry['pdf_files'] = pdf_links
             entry['source_url'] = source_url
             entry['imported_at'] = imported_at
             entry['page_id'] = page_id
             if pdf_items:
-                entry['pdf_files'] = entry.get('pdf_files', []) + pdf_items
+                for item in pdf_items:
+                    filename = item.get('filename')
+                    label = item.get('label') or filename
+                    if filename:
+                        entry['pdf_files'] = (entry.get('pdf_files') or []) + [
+                            {'name': label, 'url': f"/pdf/{filename}"}
+                        ]
+            cleanup_entry_fields(entry)
             break
     
     save_entries(entries)

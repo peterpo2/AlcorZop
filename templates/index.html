@@ -66,19 +66,24 @@
       </section>
 
       <main class="content">
+        <div class="panel-controls">
+          <button id="toggle-all-btn" class="btn btn-secondary" type="button" onclick="toggleAllPanels()">
+            Покажи всички
+          </button>
+        </div>
         <div class="panels-container">
           {% if entries %} {% for entry in entries %}
           <div class="panel">
-            <div class="panel-heading" onclick="togglePanel({{ entry.id }})">
+            <div class="panel-heading collapsed" onclick="togglePanel({{ entry.id }})">
               {% set display_title = entry.title or entry.heading %}
               <h3 class="panel-title">{{ display_title }}</h3>
               <span class="toggle-icon" aria-hidden="true">▾</span>
             </div>
-            <div class="panel-body" id="panel-{{ entry.id }}">
+            <div class="panel-body collapsed" id="panel-body-{{ entry.id }}">
               <div class="panel-content">
                 <div class="panel-meta">
                   {% if entry.publish_date %}
-                  <div class="meta-row"><strong>Началната дата:</strong> {{ entry.publish_date }}</div>
+                  <div class="meta-row"><strong>Дата на публикуване:</strong> {{ entry.publish_date }}</div>
                   {% endif %}
                   {% if entry.aop_number %}
                   <div class="meta-row"><strong>Номер от АОП:</strong> {{ entry.aop_number }}</div>
@@ -89,22 +94,32 @@
                 </div>
 
                 {% if entry.content %}
-                <p>{{ entry.content }}</p>
+                <pre class="entry-content">{{ entry.content }}</pre>
                 {% endif %}
 
                 {% set structured_files = entry.files if entry.files is defined else [] %}
-                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([entry.pdf_file] if entry.pdf_file else []) %}
+                {% set pdf_files = entry.pdf_files if entry.pdf_files is defined else ([] if not entry.pdf_file else [{'name': entry.pdf_file, 'url': '/pdf/' ~ entry.pdf_file}]) %}
+                {% set ns = namespace(pdf_map={}) %}
+                {% for pf in pdf_files %}
+                  {% if pf.name or pf.url %}
+                    {% set _ = ns.pdf_map.update({(pf.name or pf.url): pf.url}) %}
+                  {% endif %}
+                {% endfor %}
                 <div class="files-section">
                   <h4>Файлове</h4>
                   {% if structured_files and structured_files|length > 0 %}
                   <ul class="files">
                     {% for file in structured_files %}
                     <li>
-                      <a href="{{ file.url }}" target="_blank" rel="noopener">
-                        {{ file.name or file.url }}
-                      </a>
+                      {% set display_name = file.name or file.url %}
+                      {% set link_url = ns.pdf_map.get(display_name) %}
+                      {% if link_url %}
+                        <a href="{{ link_url }}" target="_blank" rel="noopener">{{ display_name }}</a>
+                      {% else %}
+                        {{ display_name }}
+                      {% endif %}
                       {% if file.published_at %}
-                      <span class="file-meta"> — Публикувано на: {{ file.published_at }}</span>
+                        <span class="file-meta"> — Публикувано на: {{ file.published_at }}</span>
                       {% endif %}
                     </li>
                     {% endfor %}
@@ -114,14 +129,10 @@
                     {% for pdf_name in pdf_files %}
                     <li>
                       <a
-                        href="{{ url_for('pdf_viewer', filename=pdf_name.filename if pdf_name is mapping else pdf_name) }}"
+                        href="{{ pdf_name.url }}"
                         target="_blank" rel="noopener"
                       >
-                        {% if pdf_name is mapping %}
-                        {{ pdf_name.label or pdf_name.filename }}
-                        {% else %}
-                        {{ pdf_name }}
-                        {% endif %}
+                        {{ pdf_name.name or pdf_name.url }}
                       </a>
                     </li>
                     {% endfor %}
