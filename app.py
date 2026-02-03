@@ -8,13 +8,14 @@ from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 16MB max file size
-#app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
+# Store PDFs in the Uploads folder (case-insensitive on Windows).
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'Uploads')
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
+MAX_PDF_FILES = 5
 
 # Data files
 DATA_FILE = 'entries.json'
@@ -116,6 +117,15 @@ def admin():
     pages = load_pages()
     return render_template('admin.html', entries=entries, pages=pages)
 
+@app.route('/logout')
+def logout():
+    """Force browser to drop cached Basic Auth credentials."""
+    return Response(
+        'Logged out',
+        401,
+        {'WWW-Authenticate': 'Basic realm="Logged Out"'}
+    )
+
 @app.route('/api/entries', methods=['GET'])
 def get_entries():
     """API endpoint to get all entries"""
@@ -138,6 +148,8 @@ def add_entry():
     # Handle file upload
     pdf_filenames = []
     files = request.files.getlist('pdf_files')
+    if len([f for f in files if f and f.filename]) > MAX_PDF_FILES:
+        return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
     for file in files:
         if not file or file.filename == '':
             continue
@@ -212,6 +224,8 @@ def update_entry(entry_id):
         # Handle file upload
         pdf_filenames = []
         files = request.files.getlist('pdf_files')
+        if len([f for f in files if f and f.filename]) > MAX_PDF_FILES:
+            return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
         for file in files:
             if not file or file.filename == '':
                 continue

@@ -58,7 +58,7 @@
               href="{{ url_for('uploaded_file', filename='обществени-поръчки.pdf') }}"
               class="pdf-link"
               style="text-decoration: underline;"
-            >
+             target="_blank" rel="noopener">
               ВЪТРЕШНИ ПРАВИЛА ЗА ВЪЗЛАГАНЕ НА ОБЩЕСТВЕНИ ПОРЪЧКИ - актуализирано на 16.06.2015
             </a>
           </div>
@@ -94,7 +94,7 @@
                   {% for pdf_name in pdf_files %}
                   <a
                     href="{{ url_for('uploaded_file', filename=pdf_name) }}"
-                    target="_blank"
+                    target="_blank" rel="noopener"
                     class="pdf-link"
                   >
                     Преглед на PDF документ
