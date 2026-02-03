@@ -64,10 +64,28 @@ function toggleAllPanels() {
     syncToggleAllState();
 }
 
+function setupProfileToggle() {
+    const btn = document.getElementById('profile-toggle-btn');
+    const container = document.getElementById('profile-container');
+    if (!btn || !container) {
+        return;
+    }
+    const setState = collapsed => {
+        container.classList.toggle('is-collapsed', collapsed);
+        btn.textContent = collapsed ? 'Покажи профил на купувача' : 'Скрий профил на купувача';
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    };
+    setState(container.classList.contains('is-collapsed'));
+    btn.addEventListener('click', () => {
+        setState(!container.classList.contains('is-collapsed'));
+    });
+}
+
 // Initialize all panels as collapsed on page load
 document.addEventListener('DOMContentLoaded', function() {
     setAllPanels(false);
     syncToggleAllState();
+    setupProfileToggle();
     log('Main UI ready');
 });
 
@@ -85,11 +103,16 @@ async function searchEntries(query) {
         }
 
         const params = new URLSearchParams(window.location.search);
-        const pageId = params.get('page') || '1';
+        const pageId = params.get('page');
+        const searchParams = new URLSearchParams();
+        searchParams.set('q', trimmed);
+        if (pageId) {
+            searchParams.set('page', pageId);
+        }
 
         try {
             const response = await fetch(
-                `/api/search?q=${encodeURIComponent(trimmed)}&page=${pageId}`
+                `/api/search?${searchParams.toString()}`
             );
 
             const entries = await response.json();
@@ -102,6 +125,9 @@ async function searchEntries(query) {
 
 function renderEntries(entries) {
     const container = document.querySelector('.entries-container');
+    if (!container) {
+        return;
+    }
     container.innerHTML = '';
 
     if (!entries.length) {

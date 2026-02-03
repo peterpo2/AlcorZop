@@ -414,11 +414,14 @@ def requires_admin(f):
 @app.route('/')
 def index():
     """Main page showing all entries"""
-    page_id = request.args.get('page', '1')
-    try:
-        page_id = int(page_id)
-    except:
-        page_id = 1
+    page_arg = request.args.get('page')
+    is_main_page = page_arg is None
+    page_id = None
+    if page_arg is not None:
+        try:
+            page_id = int(page_arg)
+        except:
+            page_id = 1
 
     entries = load_entries()
     pages = load_pages()
@@ -428,15 +431,19 @@ def index():
     if os.path.isfile(logo_path):
         profile_logo_url = url_for('uploaded_file', filename=PROFILE_LOGO_FILENAME)
 
-    # Filter entries by page
-    page_entries = [e for e in entries if e.get('page_id') == page_id]
-    app.logger.info('index page_id=%s entries=%s', page_id, len(page_entries))
+    # Filter entries by page when a page is selected. Otherwise show all.
+    if page_id is None:
+        page_entries = entries
+    else:
+        page_entries = [e for e in entries if e.get('page_id') == page_id]
+    app.logger.info('index page_id=%s entries=%s', page_id or 'all', len(page_entries))
 
     return render_template(
         'index.html',
         entries=page_entries,
         pages=pages,
         current_page=page_id,
+        is_main_page=is_main_page,
         profile=profile,
         profile_logo_url=profile_logo_url
     )

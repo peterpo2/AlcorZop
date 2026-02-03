@@ -267,6 +267,18 @@ a:hover {
     gap: 16px;
 }
 
+.profile-container.is-collapsed {
+    display: none;
+}
+
+.profile-controls {
+    justify-content: flex-start;
+}
+
+.profile-toggle-btn {
+    min-width: 220px;
+}
+
 .panels-container {
     display: flex;
     flex-direction: column;

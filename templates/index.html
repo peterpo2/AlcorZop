@@ -31,6 +31,14 @@
 
       <section class="toolbar">
         <div class="page-navigation">
+          {% if not is_main_page %}
+          <button
+            onclick="location.href='{{ url_for('index') }}'"
+            class="page-btn"
+          >
+            Начало
+          </button>
+          {% endif %}
           {% for page in pages %}
           <button
             onclick="location.href='{{ url_for('index', page=page.id) }}'"
@@ -66,7 +74,8 @@
       </section>
 
       <main class="content">
-        <div class="profile-container">
+        {% if is_main_page %}
+        <div class="profile-container" id="profile-container">
           <div class="panel static-profile">
             <div class="panel-heading">
               <h3 class="panel-title">{{ profile.title }}</h3>
@@ -80,7 +89,7 @@
                 {% endif %}
                 {% for paragraph in profile.body.split('\n\n') %}
                   {% set trimmed = paragraph.strip() %}
-                  {% if trimmed in ['УПРАВЛЕНИЕ:', 'АДРЕС:'] %}
+                  {% if trimmed in ['УПРАВЛЕНИЕ:', 'АДРЕС:', 'ЕЛЕКТРОННА ПОЩА:'] %}
                     <p class="profile-section">{{ trimmed }}</p>
                   {% else %}
                     <p>{{ paragraph | e }}</p>
@@ -102,7 +111,9 @@
             </div>
           </div>
         </div>
+        {% endif %}
 
+        {% if not is_main_page %}
         <div class="panels-container entries-container">
           {% if entries %} {% for entry in entries %}
           <div class="panel">
@@ -180,6 +191,7 @@
           </div>
           {% endfor %} {% endif %}
         </div>
+        {% endif %}
       </main>
     </div>
 
