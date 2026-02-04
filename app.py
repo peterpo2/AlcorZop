@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.json.ensure_ascii = False
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max request size
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Store PDFs in the uploads folder (case-sensitive on Linux/Docker).
+# Store uploaded attachments in the uploads folder (case-sensitive on Linux/Docker).
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY') or os.environ.get('SECRET_KEY') or os.urandom(24)
 app.secret_key = app.config['SECRET_KEY']
@@ -38,7 +38,7 @@ def configure_logging():
 configure_logging()
 
 # Allowed file extensions
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 MAX_PDF_FILES = 5
 MAX_PROFILE_PDF_FILES = 10
 PROFILE_LOGO_FILENAME = 'profile-logo.png'
@@ -60,9 +60,33 @@ if os.path.isdir(legacy_uploads) and not os.path.isdir(app.config['UPLOAD_FOLDER
 else:
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+def get_file_extension(filename):
+    if not filename:
+        return ''
+    if '.' in filename:
+        return filename.rsplit('.', 1)[1].lower()
+    # Legacy fallback: old uploads may have names like "20260204_123000_docx".
+    suffix = filename.rsplit('_', 1)[-1].lower()
+    return suffix if suffix in ALLOWED_EXTENSIONS else ''
+
+
 def allowed_file(filename):
     """Check if file extension is allowed"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return get_file_extension(filename) in ALLOWED_EXTENSIONS
+
+
+def is_pdf_file(filename):
+    return get_file_extension(filename) == 'pdf'
+
+
+def build_upload_filename(original_name):
+    root, ext = os.path.splitext(original_name or '')
+    ext = ext.lower()
+    safe_root = secure_filename(root)
+    if not safe_root:
+        safe_root = 'file'
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    return f"{timestamp}_{safe_root}{ext}"
 
 
 def load_json_file(path, default):
@@ -121,16 +145,49 @@ def load_entries():
     if not isinstance(entries, list):
         app.logger.error('entries.invalid type=%s', type(entries))
         return []
-    changed = False
+    cleaned_entries = [entry for entry in entries if isinstance(entry, dict)]
+    changed = len(cleaned_entries) != len(entries)
+    entries = cleaned_entries
     for entry in entries:
         if normalize_pdf_items(entry):
             changed = True
         if cleanup_entry_fields(entry):
             changed = True
+    original_order = [entry.get('id') for entry in entries]
+    entries.sort(key=entry_sort_key, reverse=True)
+    if original_order != [entry.get('id') for entry in entries]:
+        changed = True
     if changed:
         save_entries(entries)
         app.logger.info('entries.normalized count=%s', len(entries))
     return entries
+
+
+def parse_entry_datetime(entry):
+    raw = (entry or {}).get('date')
+    if isinstance(raw, str):
+        try:
+            return datetime.strptime(raw, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            pass
+    publish_date = (entry or {}).get('publish_date')
+    if isinstance(publish_date, str):
+        try:
+            return datetime.strptime(publish_date, '%Y-%m-%d')
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def entry_sort_key(entry):
+    if not isinstance(entry, dict):
+        return (datetime.min, 0)
+    raw_id = entry.get('id', 0)
+    try:
+        entry_id = int(raw_id)
+    except (TypeError, ValueError):
+        entry_id = 0
+    return (parse_entry_datetime(entry), entry_id)
 
 def extract_local_pdf_filename(value):
     if not value:
@@ -143,9 +200,13 @@ def extract_local_pdf_filename(value):
     if isinstance(value, str):
         if value.startswith('/pdf/'):
             return value.split('/pdf/', 1)[1]
+        if value.startswith('/uploads/'):
+            return value.split('/uploads/', 1)[1]
         parsed = urlparse(value)
         if parsed.path.startswith('/pdf/'):
             return parsed.path.split('/pdf/', 1)[1]
+        if parsed.path.startswith('/uploads/'):
+            return parsed.path.split('/uploads/', 1)[1]
     return None
 
 def normalize_pdf_items(entry):
@@ -545,17 +606,15 @@ def add_entry():
     pdf_items = []
     files = request.files.getlist('pdf_files')
     if len([f for f in files if f and f.filename]) > MAX_PDF_FILES:
-        return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
+        return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} files allowed'}), 400
     total_files = len([f for f in files if f and f.filename])
     label_index = 1
     for file in files:
         if not file or file.filename == '':
             continue
         if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
-        filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        pdf_filename = f"{timestamp}_{filename}"
+            return jsonify({'success': False, 'error': 'Only PDF or Word files allowed'}), 400
+        pdf_filename = build_upload_filename(file.filename)
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         file.save(save_path)
         label = build_pdf_label(pdf_label, label_index, total_files)
@@ -703,17 +762,15 @@ def update_entry(entry_id):
                 break
         incoming_count = len([f for f in files if f and f.filename])
         if existing_count + incoming_count > MAX_PDF_FILES:
-            return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} PDF files allowed'}), 400
+            return jsonify({'success': False, 'error': f'Maximum {MAX_PDF_FILES} files allowed'}), 400
         total_files = len([f for f in files if f and f.filename])
         label_index = 1
         for file in files:
             if not file or file.filename == '':
                 continue
             if not allowed_file(file.filename):
-                return jsonify({'success': False, 'error': 'Only PDF files allowed'}), 400
-            filename = secure_filename(file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            pdf_filename = f"{timestamp}_{filename}"
+                return jsonify({'success': False, 'error': 'Only PDF or Word files allowed'}), 400
+            pdf_filename = build_upload_filename(file.filename)
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
             file.save(save_path)
             label = build_pdf_label(pdf_label, label_index, total_files)
@@ -774,17 +831,24 @@ def delete_entry_pdfs(entry_id):
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    """Serve uploaded PDF files"""
+    """Serve uploaded attachment files"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/pdf/<filename>')
 def pdf_viewer(filename):
-    """Render a viewer page for a PDF file"""
+    """Render a viewer page for a PDF file or download Word files"""
     if not allowed_file(filename):
         return redirect(url_for('index'))
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.isfile(pdf_path):
         return redirect(url_for('index'))
+    if not is_pdf_file(filename):
+        extension = get_file_extension(filename)
+        mimetype = {
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        }.get(extension)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mimetype)
     return render_template('pdf_viewer.html', filename=filename)
 
 @app.route('/api/pages', methods=['GET'])
@@ -825,7 +889,7 @@ def update_profile():
     existing_files = profile.get('files', [])
     incoming_count = len([f for f in files if f and f.filename])
     if len(existing_files) + incoming_count > MAX_PROFILE_PDF_FILES:
-        return jsonify({'success': False, 'error': f'Maximum {MAX_PROFILE_PDF_FILES} PDF files allowed'}), 400
+        return jsonify({'success': False, 'error': f'Maximum {MAX_PROFILE_PDF_FILES} files allowed'}), 400
 
     total_files = len([f for f in files if f and f.filename])
     label_index = 1
@@ -833,10 +897,8 @@ def update_profile():
         if not file or file.filename == '':
             continue
         if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'Only PDF files allowed'}), 400
-        filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        pdf_filename = f"{timestamp}_{filename}"
+            return jsonify({'success': False, 'error': 'Only PDF or Word files allowed'}), 400
+        pdf_filename = build_upload_filename(file.filename)
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         file.save(save_path)
         label = build_pdf_label(pdf_label, label_index, total_files) or filename

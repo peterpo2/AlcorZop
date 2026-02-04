@@ -42,14 +42,14 @@
                             <textarea id="profile-body" name="profile_body" rows="10" required>{{ profile.body }}</textarea>
                         </div>
                         <div class="form-group">
-                            <label for="profile-pdf-label">Име на файла (PDF)</label>
-                            <input type="text" id="profile-pdf-label" name="profile_pdf_label" placeholder="Само за нови PDF">
-                            <small class="form-help">Името се прилага за ново качените PDF.</small>
+                            <label for="profile-pdf-label">Име на файла (PDF/Word)</label>
+                            <input type="text" id="profile-pdf-label" name="profile_pdf_label" placeholder="Само за нови PDF/Word">
+                            <small class="form-help">Името се прилага за ново качените PDF/Word файлове.</small>
                         </div>
                         <div class="form-group">
-                            <label for="profile-pdf-files">Добавяне на PDF (по избор)</label>
-                            <input type="file" id="profile-pdf-files" name="profile_pdf_files" accept=".pdf" multiple>
-                            <small class="form-help">До 10 PDF файла.</small>
+                            <label for="profile-pdf-files">Добавяне на PDF/Word (по избор)</label>
+                            <input type="file" id="profile-pdf-files" name="profile_pdf_files" accept=".pdf,.doc,.docx" multiple>
+                            <small class="form-help">До 10 PDF/Word файла.</small>
                         </div>
                         <div class="form-group profile-files-group">
                             <label>Качени файлове</label>
@@ -142,13 +142,13 @@
                             <textarea id="content" name="content" rows="5" required></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="pdf_label">Име на файл (PDF)</label>
+                            <label for="pdf_label">Име на файл (PDF/Word)</label>
                             <input type="text" id="pdf_label" name="pdf_label" placeholder="Напр. Процедура 23">
                             <small class="form-help">Това име ще се показва като текст на линка.</small>
                         </div>
                         <div class="form-group">
-                            <label for="pdf_files">Прикачи PDF (по избор)</label>
-                            <input type="file" id="pdf_files" name="pdf_files" accept=".pdf" multiple>
+                            <label for="pdf_files">Прикачи PDF/Word (по избор)</label>
+                            <input type="file" id="pdf_files" name="pdf_files" accept=".pdf,.doc,.docx" multiple>
                             <small class="form-help">Максимален размер: 32MB</small>
                         </div>
                         <button type="submit" class="btn btn-primary">Добави</button>
@@ -248,7 +248,6 @@
                     <label for="edit-publish_date">Въведете дата</label>
                     <div class="date-field">
                         <input type="date" id="edit-publish_date" name="publish_date" class="date-input">
-                        <span class="date-placeholder">дд.ММ.гггг</span>
                     </div>
                 </div>
                 <div class="form-group">
@@ -260,14 +259,14 @@
                     <textarea id="edit-content" name="content" rows="5" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="edit-pdf_label">Име на линка (PDF)</label>
-                    <input type="text" id="edit-pdf_label" name="pdf_label" placeholder="Само за нови PDF">
-                    <small class="form-help">Името се прилага за ново качените PDF.</small>
+                    <label for="edit-pdf_label">Име на линка (PDF/Word)</label>
+                    <input type="text" id="edit-pdf_label" name="pdf_label" placeholder="Само за нови PDF/Word">
+                    <small class="form-help">Името се прилага за ново качените PDF/Word файлове.</small>
                 </div>
                 <div class="form-group">
-                    <label for="edit-pdf_files">Добавяне на PDF (по избор)</label>
-                    <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf" multiple>
-                    <small class="form-help" id="current-pdf-info">Макс 32MB, до 5 PDF файла.</small>
+                    <label for="edit-pdf_files">Добавяне на PDF/Word (по избор)</label>
+                    <input type="file" id="edit-pdf_files" name="pdf_files" accept=".pdf,.doc,.docx" multiple>
+                    <small class="form-help" id="current-pdf-info">Макс 32MB, до 5 PDF/Word файла.</small>
                     <button type="button" onclick="removeAllPdfs()" class="btn btn-delete">Изтрий всички PDF</button>
                 </div>
                 <button type="submit" class="btn btn-primary">Обнови</button>
