@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>МБАЛ „Рахила Ангелова“ – гр. Перник</title>
+    <title>ДПБ Св. Иван Рилски</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -22,7 +22,7 @@
           <div class="brand">
             <div class="brand-text">
               <h1>
-                <a href="{{ url_for('index') }}">МБАЛ „Рахила Ангелова“ – гр. Перник</a>
+                <a href="{{ url_for('index') }}">ДПБ Св. Иван Рилски</a>
               </h1>
             </div>
           </div>
@@ -62,13 +62,24 @@
           </div>
           <div class="terms-container">
             <span class="terms-label">Общи условия</span>
-            <a
-              href="{{ url_for('pdf_viewer', filename='обществени-поръчки.pdf') }}"
-              class="pdf-link"
-              style="text-decoration: underline;"
-             target="_blank" rel="noopener">
-              ВЪТРЕШНИ ПРАВИЛА ЗА ВЪЗЛАГАНЕ НА ОБЩЕСТВЕНИ ПОРЪЧКИ - актуализирано на 16.06.2015
-            </a>
+            {% if terms.files %}
+              {% for file in terms.files %}
+              <a
+                href="{{ file.url }}"
+                class="pdf-link"
+                style="text-decoration: underline;"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ file.name }}
+              </a>
+              {% if file.description %}
+              <span>{{ file.description }}</span>
+              {% endif %}
+              {% endfor %}
+            {% else %}
+              <span class="no-files">Няма прикачени файлове.</span>
+            {% endif %}
           </div>
         </div>
       </section>
@@ -84,16 +95,11 @@
               <div class="panel-content profile-content">
                 {% if profile_logo_url %}
                 <div class="profile-logo">
-                  <img src="{{ profile_logo_url }}" alt="Лого на МБАЛ „Рахила Ангелова“" />
+                  <img src="{{ profile_logo_url }}" alt="Лого на ДПБ Св. Иван Рилски" />
                 </div>
                 {% endif %}
                 {% for paragraph in profile.body.split('\n\n') %}
-                  {% set trimmed = paragraph.strip() %}
-                  {% if trimmed in ['УПРАВЛЕНИЕ:', 'АДРЕС:', 'ЕЛЕКТРОННА ПОЩА:'] %}
-                    <p class="profile-section">{{ trimmed }}</p>
-                  {% else %}
-                    <p>{{ paragraph | e }}</p>
-                  {% endif %}
+                  <p>{{ paragraph | e }}</p>
                 {% endfor %}
                 {% if profile.files %}
                 <div class="files-section profile-files">

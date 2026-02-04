@@ -41,12 +41,14 @@ configure_logging()
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 MAX_PDF_FILES = 5
 MAX_PROFILE_PDF_FILES = 10
+MAX_TERMS_FILES = 10
 PROFILE_LOGO_FILENAME = 'profile-logo.png'
 
 # Data files
 DATA_FILE = 'entries.json'
 PAGES_FILE = 'pages.json'
 PROFILE_FILE = 'profile.json'
+TERMS_FILE = 'terms.json'
 
 # Create uploads directory if it doesn't exist (and migrate legacy folder if present)
 legacy_uploads = os.path.join(BASE_DIR, 'Uploads')
@@ -364,38 +366,6 @@ def save_pages(pages):
     """Save pages to JSON file"""
     save_json_file(PAGES_FILE, pages)
 
-def default_profile():
-    return {
-        "title": "Профил на купувача – МБАЛ „Рахила Ангелова“ – гр. Перник",
-        "body": (
-            "\n"
-            "МБАЛ „Рахила Ангелова“ АД гр. Перник съхранява и обогатява "
-            "традициите на 110-годишната си история. Днес тя е модерно "
-            "здравно заведение, което предлага квалифицирана болнична "
-            "диагностична, лечебна и рехабилитационна помощ на нуждаещите се "
-            "от активно лечение.\n"
-            "\n"
-            "УПРАВЛЕНИЕ:\n"
-            "Д-р Анатоли Митов\n"
-            "Изпълнителен директор на МБАЛ „Рахила Ангелова“, гр. Перник\n"
-            "тел.: 076 / 601 360\n"
-            "\n"
-            "Д-р Симеон Станков\n"
-            "Заместник-директор „Медицински дейности“\n"
-            "тел.: 076 / 601 360\n"
-            "\n"
-            "ЮРИСТИ:\n"
-            "\n"
-            "АДРЕС:\n"
-            "Лечебното заведение се намира на адрес:\n"
-            "гр. Перник, ул. „Брезник“ №2, ПК 2300\n"
-            "\n"
-            "Електронна поща:\n"
-            "mbalpk@abv.bg"
-        ),
-        "files": []
-    }
-
 def normalize_profile_body(text):
     body = (text or "")
     # Handle double-escaped HTML (e.g., &amp;lt;br&amp;gt;).
@@ -414,17 +384,16 @@ def normalize_profile_body(text):
 
 def load_profile():
     data = load_json_file(PROFILE_FILE, {})
-    if isinstance(data, dict) and data.get('title') and data.get('body'):
-        normalized_body = normalize_profile_body(data.get('body', ''))
-        files = data.get('files')
-        if not isinstance(files, list):
-            files = []
-        data['files'] = files
-        if normalized_body != data.get('body'):
-            data['body'] = normalized_body
-            save_profile(data)
-        return data
-    return default_profile()
+    if not isinstance(data, dict):
+        return {'title': '', 'body': '', 'files': []}
+    profile = {
+        'title': (data.get('title') or '').strip(),
+        'body': normalize_profile_body(data.get('body', '')),
+        'files': data.get('files') if isinstance(data.get('files'), list) else []
+    }
+    if profile != data:
+        save_profile(profile)
+    return profile
 
 def save_profile(profile):
     profile = {
@@ -433,6 +402,56 @@ def save_profile(profile):
         'files': profile.get('files', [])
     }
     save_json_file(PROFILE_FILE, profile)
+
+
+def load_terms():
+    data = load_json_file(TERMS_FILE, {})
+    if not isinstance(data, dict):
+        return {'files': []}
+    files = data.get('files')
+    if not isinstance(files, list):
+        files = []
+    normalized_files = []
+    for item in files:
+        if not isinstance(item, dict):
+            continue
+        filename = (item.get('filename') or '').strip()
+        if not filename:
+            continue
+        name = (item.get('name') or filename).strip()
+        description = (item.get('description') or '').strip()
+        normalized_files.append({
+            'name': name,
+            'description': description,
+            'filename': filename,
+            'url': f"/pdf/{filename}"
+        })
+    terms = {'files': normalized_files}
+    if terms != data:
+        save_terms(terms)
+    return terms
+
+
+def save_terms(terms):
+    files = terms.get('files')
+    if not isinstance(files, list):
+        files = []
+    normalized_files = []
+    for item in files:
+        if not isinstance(item, dict):
+            continue
+        filename = (item.get('filename') or '').strip()
+        if not filename:
+            continue
+        name = (item.get('name') or filename).strip()
+        description = (item.get('description') or '').strip()
+        normalized_files.append({
+            'name': name,
+            'description': description,
+            'filename': filename,
+            'url': f"/pdf/{filename}"
+        })
+    save_json_file(TERMS_FILE, {'files': normalized_files})
 
 CREDENTIALS_FILE = 'cred.json'
 
@@ -495,6 +514,7 @@ def index():
     entries = load_entries()
     pages = load_pages()
     profile = load_profile()
+    terms = load_terms()
     profile_logo_url = None
     logo_path = os.path.join(app.config['UPLOAD_FOLDER'], PROFILE_LOGO_FILENAME)
     if os.path.isfile(logo_path):
@@ -514,6 +534,7 @@ def index():
         current_page=page_id,
         is_main_page=is_main_page,
         profile=profile,
+        terms=terms,
         profile_logo_url=profile_logo_url
     )
 
@@ -554,8 +575,9 @@ def admin():
     entries = load_entries()
     pages = load_pages()
     profile = load_profile()
+    terms = load_terms()
     app.logger.info('admin.view user=%s', session.get('admin_user'))
-    return render_template('admin.html', entries=entries, pages=pages, profile=profile)
+    return render_template('admin.html', entries=entries, pages=pages, profile=profile, terms=terms)
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -901,7 +923,7 @@ def update_profile():
         pdf_filename = build_upload_filename(file.filename)
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         file.save(save_path)
-        label = build_pdf_label(pdf_label, label_index, total_files) or filename
+        label = build_pdf_label(pdf_label, label_index, total_files) or pdf_filename
         existing_files.append({
             'name': label,
             'filename': pdf_filename,
@@ -935,6 +957,70 @@ def delete_profile_pdf(filename):
     profile['files'] = updated_files
     save_profile(profile)
     app.logger.info('profile.delete_pdf filename=%s removed=%s', filename, removed)
+    return jsonify({'success': True, 'removed': removed})
+
+
+@app.route('/api/terms', methods=['GET'])
+@requires_admin
+def get_terms():
+    return jsonify(load_terms())
+
+
+@app.route('/api/terms', methods=['PUT'])
+@requires_admin
+def update_terms():
+    terms = load_terms()
+    files = terms.get('files', [])
+    name = (request.form.get('name') or '').strip()
+    description = (request.form.get('description') or '').strip()
+    incoming_files = request.files.getlist('files') or request.files.getlist('file')
+
+    valid_uploads = [f for f in incoming_files if f and f.filename]
+    upload_count = len(valid_uploads)
+    if upload_count < 1:
+        return jsonify({'success': False, 'error': 'Upload at least one PDF/Word file'}), 400
+    if len(files) + upload_count > MAX_TERMS_FILES:
+        return jsonify({'success': False, 'error': f'Maximum {MAX_TERMS_FILES} files allowed'}), 400
+    if not name or not description:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    for index, file in enumerate(valid_uploads, start=1):
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Only PDF or Word files allowed'}), 400
+        filename = build_upload_filename(file.filename)
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(save_path)
+        files.append({
+            'name': build_pdf_label(name, index, upload_count) or filename,
+            'description': description,
+            'filename': filename,
+            'url': f"/pdf/{filename}"
+        })
+    save_terms({'files': files})
+    app.logger.info('terms.update files=%s', len(files))
+    return jsonify({'success': True, 'terms': {'files': files}})
+
+
+@app.route('/api/terms/files/<filename>', methods=['DELETE'])
+@requires_admin
+def delete_terms_file(filename):
+    if not allowed_file(filename):
+        return jsonify({'success': False, 'error': 'Invalid file'}), 400
+    terms = load_terms()
+    files = terms.get('files', [])
+    removed = False
+    updated_files = []
+    for item in files:
+        if isinstance(item, dict) and item.get('filename') == filename:
+            removed = True
+            continue
+        updated_files.append(item)
+    if removed:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    save_terms({'files': updated_files})
+    app.logger.info('terms.delete_file filename=%s removed=%s', filename, removed)
     return jsonify({'success': True, 'removed': removed})
 
 @app.route('/api/pages', methods=['POST'])

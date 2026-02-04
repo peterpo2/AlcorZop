@@ -70,9 +70,53 @@
                         <button type="submit" class="btn btn-primary">Запази</button>
                     </form>
                 </div>
-            </div>
-
-            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
+	            </div>
+	
+	            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
+	                <div class="section-header">
+	                    <h2>Общи условия</h2>
+	                    <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>
+	                </div>
+	                <div class="section-body">
+	                    <form id="terms-form">
+	                        <div class="form-group">
+	                            <label for="terms-name">Име на файл (PDF/Word)</label>
+	                            <input type="text" id="terms-name" name="terms_name" required>
+	                        </div>
+	                        <div class="form-group">
+	                            <label for="terms-description">Описание</label>
+	                            <input type="text" id="terms-description" name="terms_description" required>
+	                        </div>
+	                        <div class="form-group">
+	                            <label for="terms-file">PDF/Word файл</label>
+	                            <input type="file" id="terms-file" name="terms_file" accept=".pdf,.doc,.docx" multiple required>
+	                            <small class="form-help">Може да качите един или повече файла наведнъж (до 10 общо).</small>
+	                        </div>
+	                        <div class="form-group terms-files-group">
+	                            <label>Качени файлове</label>
+	                            {% set terms_files = terms.files if terms.files is defined else [] %}
+	                            {% if terms_files and terms_files|length > 0 %}
+	                            <ul class="files terms-files-list">
+	                                {% for file in terms_files %}
+	                                <li data-filename="{{ file.filename }}">
+	                                    <a href="{{ file.url }}" target="_blank" rel="noopener">{{ file.name }}</a>
+	                                    {% if file.description %}
+	                                    <span>{{ file.description }}</span>
+	                                    {% endif %}
+	                                    <button type="button" class="btn-small btn-delete terms-file-delete">Изтрий</button>
+	                                </li>
+	                                {% endfor %}
+	                            </ul>
+	                            {% else %}
+	                            <p class="no-files terms-no-files">Няма прикачени файлове.</p>
+	                            {% endif %}
+	                        </div>
+	                        <button type="submit" class="btn btn-primary">Запази</button>
+	                    </form>
+	                </div>
+	            </div>
+	
+	            <div class="admin-section collapsible collapsed" data-collapsible="true" data-collapsed="true">
                 <div class="section-header">
                     <h2>Страници</h2>
                     <button type="button" class="section-toggle" aria-expanded="false">Покажи</button>

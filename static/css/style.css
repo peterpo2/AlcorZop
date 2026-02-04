@@ -2,9 +2,9 @@
     --bg: #f7f7f7;
     --ink: #1f1f1f;
     --muted: #5a5a5a;
-    --accent: #c6262d;
-    --accent-strong: #a61f25;
-    --accent-soft: #f5e7e8;
+    --accent: #63b3ff;
+    --accent-strong: #3f9df5;
+    --accent-soft: #e8f4ff;
     --link: #1f5ea8;
     --surface: #ffffff;
     --stroke: #dedede;
@@ -83,7 +83,7 @@ a:hover {
     color: #ffffff;
     font-weight: 700;
     letter-spacing: 0.04em;
-    box-shadow: 0 8px 18px rgba(211, 32, 39, 0.25);
+    box-shadow: 0 8px 18px rgba(99, 179, 255, 0.25);
 }
 
 .brand-text h1 {
@@ -369,7 +369,19 @@ a:hover {
     gap: 10px;
 }
 
+.terms-files-group .files li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .profile-files-group .files a {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.terms-files-group .files a {
     flex: 1 1 auto;
     min-width: 0;
     word-break: break-word;
@@ -389,13 +401,6 @@ a:hover {
     white-space: pre-line;
 }
 
-.static-profile .panel-content p.profile-section {
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--ink);
-    margin-top: 18px;
-}
-
 .static-profile .panel-content p:last-child {
     margin-bottom: 0;
 }
@@ -409,7 +414,7 @@ a:hover {
 }
 
 .profile-logo img {
-    max-width: 500px;
+    max-width: 1000px;
     width: 100%;
     height: auto;
     display: block;
@@ -494,7 +499,7 @@ a:hover {
 
 .terms-link:hover {
     color: var(--accent-strong);
-    border-color: rgba(166, 31, 37, 0.4);
+    border-color: rgba(63, 157, 245, 0.4);
 }
 
 .admin-section {
@@ -585,17 +590,17 @@ a:hover {
 .btn-primary {
     background: var(--accent);
     color: #fff;
-    box-shadow: 0 10px 18px rgba(198, 38, 45, 0.22);
+    box-shadow: 0 10px 18px rgba(99, 179, 255, 0.22);
 }
 
 .btn-new-page {
-    background: #e45b62;
-    border-color: #e45b62;
-    box-shadow: 0 10px 18px rgba(228, 91, 98, 0.22);
+    background: #79c3ff;
+    border-color: #79c3ff;
+    box-shadow: 0 10px 18px rgba(121, 195, 255, 0.22);
 }
 
 .btn-new-page:hover {
-    background: #de4b52;
+    background: #66b8fb;
 }
 
 .landing-main {
@@ -635,7 +640,7 @@ a:hover {
 }
 
 .btn-delete {
-    background: #ef6f5a;
+    background: #fc0b02;
     color: #fff;
 }
 
@@ -863,5 +868,5 @@ a:hover {
 }
 
 .btn.btn-static.btn-new-page:hover {
-    background: #de4b52;
+    background: #66b8fb;
 }

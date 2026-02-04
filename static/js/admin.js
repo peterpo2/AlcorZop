@@ -185,11 +185,148 @@ function setupProfileFileDeletes() {
     });
 }
 
+function setupTermsForm() {
+    const form = document.getElementById('terms-form');
+    if (!form) {
+        return;
+    }
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const name = document.getElementById('terms-name').value.trim();
+        const description = document.getElementById('terms-description').value.trim();
+        const fileInput = document.getElementById('terms-file');
+        if (!name || !description) {
+            alert('Моля, попълнете име на файл и описание.');
+            return;
+        }
+        if (!fileInput || fileInput.files.length < 1) {
+            alert('Моля, качете поне един PDF/Word файл.');
+            return;
+        }
+        try {
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', description);
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('files', file);
+            });
+            const response = await fetch('/api/terms', {
+                method: 'PUT',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('Общите условия са обновени успешно.');
+                form.reset();
+                if (result.terms && result.terms.files) {
+                    renderTermsFiles(result.terms.files);
+                }
+            } else {
+                alert(result.error || 'Неуспешно обновяване на общите условия.');
+            }
+        } catch (error) {
+            logError('Terms update failed', error);
+            alert('Възникна грешка при обновяване на общите условия.');
+        }
+    });
+}
+
+function renderTermsFiles(files) {
+    const container = document.querySelector('.terms-files-group');
+    if (!container) {
+        return;
+    }
+    const list = container.querySelector('.terms-files-list');
+    const empty = container.querySelector('.terms-no-files');
+    if (list) {
+        list.remove();
+    }
+    if (empty) {
+        empty.remove();
+    }
+    if (!files || files.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'no-files terms-no-files';
+        p.textContent = 'Няма прикачени файлове.';
+        container.appendChild(p);
+        return;
+    }
+    const ul = document.createElement('ul');
+    ul.className = 'files terms-files-list';
+    files.forEach(file => {
+        const li = document.createElement('li');
+        if (file.filename) {
+            li.dataset.filename = file.filename;
+        }
+        const link = document.createElement('a');
+        link.href = file.url || '#';
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = file.name || file.filename || file.url || 'PDF';
+        li.appendChild(link);
+        if (file.description) {
+            const description = document.createElement('span');
+            description.textContent = ` ${file.description}`;
+            li.appendChild(description);
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-small btn-delete terms-file-delete';
+        btn.textContent = 'Изтрий';
+        li.appendChild(btn);
+        ul.appendChild(li);
+    });
+    container.appendChild(ul);
+}
+
+function setupTermsFileDeletes() {
+    const container = document.querySelector('.terms-files-group');
+    if (!container) {
+        return;
+    }
+    container.addEventListener('click', async event => {
+        const button = event.target.closest('.terms-file-delete');
+        if (!button) {
+            return;
+        }
+        const item = button.closest('li');
+        const filename = item ? item.dataset.filename : '';
+        if (!filename) {
+            return;
+        }
+        if (!confirm('Сигурни ли сте, че искате да изтриете този файл?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/terms/files/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                if (item) {
+                    item.remove();
+                }
+                const remaining = container.querySelectorAll('li');
+                if (remaining.length === 0) {
+                    renderTermsFiles([]);
+                }
+            } else {
+                alert(result.error || 'Неуспешно изтриване на файла.');
+            }
+        } catch (error) {
+            logError('Terms file delete failed', error);
+            alert('Възникна грешка при изтриване на файла.');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     setupDateFields();
     setupCollapsibles();
     setupProfileForm();
     setupProfileFileDeletes();
+    setupTermsForm();
+    setupTermsFileDeletes();
     log('Admin UI ready');
 });
 
