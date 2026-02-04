@@ -324,14 +324,16 @@ a:hover {
 }
 
 .panel-body {
-    max-height: 600px;
-    overflow: hidden;
+    max-height: min(70vh, 640px);
+    overflow-y: auto;
+    overflow-x: hidden;
     transition: max-height 0.3s ease;
     background: #fff;
 }
 
 .panel-body.collapsed {
     max-height: 0;
+    overflow: hidden;
 }
 
 .panel-content {
@@ -421,6 +423,7 @@ a:hover {
 .static-profile .panel-body {
     max-height: none;
     min-height: 620px;
+    overflow: visible;
 }
 
 .pdf-attachment {
@@ -796,6 +799,8 @@ a:hover {
     border-radius: var(--radius-md);
     max-width: 600px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: var(--shadow);
     border: 1px solid var(--stroke);
 }
