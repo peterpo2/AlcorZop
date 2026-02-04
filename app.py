@@ -283,11 +283,19 @@ def load_pages():
         app.logger.error('pages.invalid type=%s', type(pages))
         return []
     changed = False
+    cleaned_pages = []
     for page in pages:
+        page_name = normalize_for_compare(page.get('name', ''))
+        if page_name == 'page_name':
+            changed = True
+            app.logger.warning('pages.cleanup removed_invalid_page id=%s name=%s', page.get('id'), page.get('name'))
+            continue
         if 'searchable' not in page:
             page['searchable'] = True
             changed = True
+        cleaned_pages.append(page)
     if changed:
+        pages = cleaned_pages
         save_pages(pages)
     return pages
 
@@ -515,8 +523,8 @@ def add_entry():
     entries = load_entries()
     
     # Handle multipart form data
-    title = request.form.get('title', '')
-    heading = request.form.get('heading', '')
+    title = normalize_text(request.form.get('title', ''))
+    heading = normalize_text(request.form.get('heading', ''))
     aop_number = request.form.get('aop_number', '')
     publish_date = request.form.get('publish_date', '')
     start_date = request.form.get('start_date', '')
@@ -530,7 +538,7 @@ def add_entry():
     page_id = int(page_id_raw) if page_id_raw.isdigit() else 0
     pdf_label = request.form.get('pdf_label', '').strip()
 
-    if not heading.strip() or not publish_date.strip() or page_id <= 0:
+    if not title or page_id <= 0:
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
     # Handle file upload

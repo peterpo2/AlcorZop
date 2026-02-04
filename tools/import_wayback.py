@@ -132,32 +132,18 @@ class Importer:
         self.entries_cache = resp.json()
         return self.entries_cache
 
-    def ensure_page(self, page_name: str) -> int:
+    def ensure_page(self, page_name: str) -> Optional[int]:
         pages = self.get_pages()
-        normalized = page_name.strip().casefold()
+        normalized = self.normalize_for_compare(page_name)
         for page in pages:
-            if str(page.get("name", "")).strip().casefold() == normalized:
+            if self.normalize_for_compare(str(page.get("name", ""))) == normalized:
                 return int(page["id"])
-
-        self.log(f"  -> Creating page: {page_name}")
-        if self.dry_run:
-            new_id = max([p.get("id", 0) for p in pages], default=0) + 1
-            pages.append({"id": new_id, "name": page_name})
-            return new_id
-
-        url = f"{self.flask_base}/api/pages"
-        resp = self.session.post(
-            url,
-            json={"name": page_name},
-            timeout=self.timeout,
-            auth=self.api_auth,
+        available = ", ".join(sorted([self.normalize_text(str(p.get("name", ""))) for p in pages if p.get("name")]))
+        self.log(
+            f"  !! No page mapping for CSV page_name '{page_name}'. "
+            f"Available pages: {available}"
         )
-        self.sleep()
-        if resp.status_code != 200:
-            raise RuntimeError(f"Failed to create page {page_name}: {resp.text}")
-        page = resp.json().get("page")
-        pages.append(page)
-        return int(page["id"])
+        return None
 
     def entry_key(self, entry: Dict) -> Tuple[int, str, str]:
         page_id = int(entry.get("page_id", 0))
@@ -426,6 +412,9 @@ class Importer:
     def import_row(self, row: CsvRow) -> None:
         self.log(f"Processing: {row.url}")
         page_id = self.ensure_page(row.page_name)
+        if page_id is None:
+            self.log("  !! Skipping row due to missing page mapping")
+            return
         resp = self.fetch(row.url)
         if not resp:
             self.log("  !! Failed to fetch page, skipping")
@@ -470,8 +459,10 @@ def read_csv(csv_path: str, logger) -> List[CsvRow]:
         reader = csv.DictReader(f)
         if not reader.fieldnames:
             raise ValueError("CSV has no headers")
+        normalized_headers = [((h or "").strip()) for h in reader.fieldnames]
+        reader.fieldnames = normalized_headers
         required = {"url", "page_name"}
-        missing = required - set([h.strip() for h in reader.fieldnames])
+        missing = required - set(normalized_headers)
         if missing:
             raise ValueError(f"CSV missing required columns: {', '.join(sorted(missing))}")
 
@@ -479,6 +470,9 @@ def read_csv(csv_path: str, logger) -> List[CsvRow]:
             url = (row.get("url") or "").strip()
             page_name = (row.get("page_name") or "").strip()
             subtopic = (row.get("subtopic") or "").strip()
+            if url.casefold() == "url" and page_name.casefold() == "page_name":
+                logger(f"  !! Skipping row {i}: repeated CSV header row")
+                continue
             if not url or not page_name:
                 logger(f"  !! Skipping row {i}: missing url or page_name -> {row}")
                 continue

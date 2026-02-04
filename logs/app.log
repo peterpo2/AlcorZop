@@ -1,0 +1,8 @@
+2026-02-03 23:12:02,683 WARNING [app] auth.denied path=/api/entries
+2026-02-03 23:12:02,684 INFO [app] http GET /api/entries 401 0.001s
+2026-02-03 23:12:17,621 WARNING [app] auth.denied path=/api/entries
+2026-02-03 23:12:17,622 INFO [app] http GET /api/entries 401 0.001s
+2026-02-04 08:07:02,808 INFO [app] data.save path=entries.json count=1
+2026-02-04 08:07:02,808 INFO [app] entries.add id=1 page_id=1 pdfs=0
+2026-02-04 08:07:02,809 INFO [app] http POST /api/entries 200 0.003s
+2026-02-04 08:07:53,868 INFO [app] http POST /api/entries 400 0.001s
